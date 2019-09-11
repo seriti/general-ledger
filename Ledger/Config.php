@@ -86,13 +86,6 @@ class Config
             define('COMPANY_NAME','');
         }
                 
-        $system = []; //can specify any GOD access system menu items
-        $options['logo_link'] = BASE_URL.'admin/dashboard';
-        $options['active_link'] = 'admin/ledger/'.MODULE_PAGE;
-        $menu_html = $menu->buildMenu($system,$options);
-        $this->container->view->addAttribute('menu',$menu_html);
-
-        //define('MODULE_NAV',$menu->buildNav($module['route_list'],MODULE_PAGE));
         $submenu_html = $menu->buildNav($module['route_list'],MODULE_PAGE);
         $this->container->view->addAttribute('sub_menu',$submenu_html);
        
