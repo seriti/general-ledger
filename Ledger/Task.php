@@ -12,21 +12,23 @@ class Task extends SeritiTask
         $param = array();
         $param['separator'] = true;
 
-        $this->addTask('EDIT_COMPANY','Edit '.COMPANY_NAME.' details');
-        $this->addTask('IMPORT_BANK','Import CSV bank statement');
-        $this->addTask('TRANSACT_NEW','process NEW transactions to ledger');
-        $this->addTask('TRANSACT_NEW_DELETE','Delete NEW unprocessed transactions');
-        $this->addTask('SETUP_PERIODS','Manage company periods');
-        $this->addTask('CLOSE_PERIOD','CLOSE company period');
-        $this->addTask('OPEN_PERIOD','OPEN company period');
-        $this->addTask('ADD_PERIOD','ADD company period');
-        $this->addTask('CALC_BALANCES','Re-calculate company balances for a period',$param);
+        $this->addBlock('COMPANY',1,1,'Manage Active Company');
+        $this->addTask('COMPANY','EDIT_COMPANY','Edit '.COMPANY_NAME.' details');
+        $this->addTask('COMPANY','IMPORT_BANK','Import CSV bank statement');
+        $this->addTask('COMPANY','TRANSACT_NEW','process NEW transactions to ledger');
+        $this->addTask('COMPANY','TRANSACT_NEW_DELETE','Delete NEW unprocessed transactions');
+        $this->addTask('COMPANY','SETUP_PERIODS','Manage company periods');
+        $this->addTask('COMPANY','CLOSE_PERIOD','CLOSE company period');
+        $this->addTask('COMPANY','OPEN_PERIOD','OPEN company period');
+        $this->addTask('COMPANY','ADD_PERIOD','ADD company period');
+        $this->addTask('COMPANY','CALC_BALANCES','Re-calculate company balances for a period',$param);
 
-        $this->addTask('CHANGE_COMPANY','Change active company');
-        $this->addTask('ALL_COMPANIES','Manage ALL companies');
-        $this->addTask('ADD_COMPANY','Add a new company');
-        $this->addTask('SETUP_ACCOUNTS','Setup default accounts for a NEW company');
-        $this->addTask('DELETE_ACCOUNTS','Delete unused accounts for a company');
+        $this->addBlock('MANAGE',2,1,'All Companies');
+        $this->addTask('MANAGE','CHANGE_COMPANY','Change active company');
+        $this->addTask('MANAGE','ALL_COMPANIES','Manage ALL companies');
+        $this->addTask('MANAGE','ADD_COMPANY','Add a new company');
+        $this->addTask('MANAGE','SETUP_ACCOUNTS','Setup default accounts for a NEW company');
+        $this->addTask('MANAGE','DELETE_ACCOUNTS','Delete unused accounts for a company');
     }
 
     function processTask($id,$param = []) {
