@@ -111,8 +111,8 @@ class SetupData extends SetupModuledata
 
            
         //initialisation
-        //$this->addInitialSql('INSERT INTO `TABLE_PREFIXcontacts` (name,surname,email,cell,notes,contact_date) '.
-        //                     'VALUES("Mark","Andrew","mark@seriti.com","076 980 7131","Application developer",CURDATE())');
+        $this->addInitialSql('INSERT INTO `TABLE_PREFIXcompany` (name,date_start,vat_rate,status) '.
+                             'VALUES("My first company",CURDATE(),"15",OK")');
         
 
         //updates use time stamp in ['YYYY-MM-DD HH:MM'] format, must be unique and sequential

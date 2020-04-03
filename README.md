@@ -26,7 +26,7 @@ or by using **git clone https://github.com/seriti/general-ledger** from command 
 Once you have a local copy of module code check that it has following structure:
 
 /Ledger/(all module implementation classes are in this folder)  
-/setup_add.php  
+/setup_app.php  
 /routes.php  
 /templates/(all templates required in this folder)  
 
@@ -44,7 +44,9 @@ Please check the "table_prefix" value to ensure that there will not be a clash w
 **http://localhost:8000/admin/ledger/dashboard** if you are using php built in server  
 OR  
 **http://www.yourdomain.com/admin/ledger/dashboard** if you have configured a domain on your server  
+OR
+Click **Dashboard** menu option and you will see list of available modules, click **General Ledger**  
 
 Now click link at bottom of page **Setup Database**: This will create all necessary database tables with table_prefix as defined above.  
-Thats it, you are good to go. Create a company, setup your chart of accounts, and first accounting period.  
-capture some transactions and view income statement balance sheet. You can also import bank CSV dumps of credit card transactions but will need to modify or add code for the format of your bank's csv data.
+Thats it, you are good to go. Select **Tasks** Tab and: Create a company, setup your chart of accounts, and first accounting period.  
+Finally capture some transactions and view income statement balance sheet. You can also import bank CSV dumps of credit card transactions but will need to modify or add code for the format of your bank's csv data.

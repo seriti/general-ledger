@@ -23,7 +23,7 @@ class Company extends Table
         $this->addTableCol(array('id'=>'description','type'=>'STRING','title'=>'Description','size'=>40,'required'=>false));
         $this->addTableCol(array('id'=>'date_start','type'=>'DATE','title'=>'Date started','new'=>date('Y-m-d')));
         $this->addTableCol(array('id'=>'vat_apply','type'=>'BOOLEAN','title'=>'VAT applicable'));
-        $this->addTableCol(array('id'=>'vat_rate','type'=>'STRING','title'=>'VAT rate(%)'));
+        $this->addTableCol(array('id'=>'vat_rate','type'=>'STRING','title'=>'VAT rate(%)','new'=>'15'));
         $this->addTableCol(array('id'=>'vat_account_id','type'=>'INTEGER','title'=>'VAT liability account','new'=>0,'join'=>'name FROM '.TABLE_PREFIX.'account WHERE account_id'));
         $this->addTableCol(array('id'=>'ret_account_id','type'=>'INTEGER','title'=>'Retained earnings account','new'=>0,'join'=>'name FROM '.TABLE_PREFIX.'account WHERE account_id'));
         $this->addTableCol(array('id'=>'status','type'=>'STRING','title'=>'Status'));

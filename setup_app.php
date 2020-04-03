@@ -6,7 +6,7 @@ add the below code snippet to the end of existing "src/setup_app.php" file.
 This tells the framework about module: name, sub-memnu route list and title, database table prefix.
 */
 
-$container['config']->set('module','ledger',['name'=>'General-Ledger',
+$container['config']->set('module','ledger',['name'=>'General Ledger',
                                              'route_root'=>'admin/ledger/',
                                              'route_list'=>['dashboard'=>'Dashboard','account'=>'Accounts','transact'=>'Transactions',
                                                             'task'=>'Tasks','report'=>'Reports'],
