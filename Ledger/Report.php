@@ -12,7 +12,7 @@ class Report extends ReportTool
     public function setup() 
     {
         //$this->report_header = '';
-        //$this->always_list_reports = true;
+        $this->always_list_reports = true;
 
         $param = ['input'=>['select_period','select_format']];
         $this->addReport('INCOME_STATEMENT','Income statement',$param); 

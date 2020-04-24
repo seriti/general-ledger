@@ -564,7 +564,8 @@ class Helpers {
                 $right_col .= '<br/>'; 
                 $right_col .=  Html::arrayDrawTable($equity,$row_h,$col_width,$col_type,$align,$html_options,$output);
                 
-                $html = '<table class="table  table-striped table-bordered table-hover table-condensed">'.
+                $html = '<h1>'.$company['name'].' Balance sheet for '.$period['name'].'</h1>'.
+                        '<table class="table  table-striped table-bordered table-hover table-condensed">'.
                         '<tr valign="top"><td>'.$left_col.'</td><td valign="top">'.$right_col.'</td></tr>'.
                         '<tr><td align="right">Balance: '.number_format($left_total,2).'</td>'.
                                 '<td align="right">Balance: '.number_format($right_total,2).'</td></tr>'.
@@ -786,9 +787,9 @@ class Helpers {
             $col_type = array('','DBL2');
             $html_options = [];
             $output = [];
-            
+
             if($options['format'] === 'HTML') {
-                $html .= '<div><h1>'.COMPANY_NAME.' Income statement for '.$period['name'].'</h1>';
+                $html .= '<div><h1>'.$company['name'].' Income statement for '.$period['name'].'</h1>';
                 $html .=  Html::arrayDrawTable($income,$row_h,$col_width,$col_type,$align,$html_options,$output);
                 $html .= '<br/>';
                 $html .=  Html::arrayDrawTable($expense,$row_h,$col_width,$col_type,$align,$html_options,$output);
