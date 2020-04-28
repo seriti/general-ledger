@@ -25,7 +25,7 @@ $app->group('/admin', function () {
         $this->get('/setup_data', \App\Ledger\SetupDataController::class);
     })->add(\App\Ledger\Config::class);
 
-})->add(\App\ConfigAdmin::class);
+})->add(\App\User\ConfigAdmin::class);
 
 
 
