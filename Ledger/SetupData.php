@@ -8,7 +8,7 @@ class SetupData extends SetupModuledata
 
     public function setupSql()
     {
-        $this->tables = ['company','account','transact','entry','period','balance'];
+        $this->tables = ['company','chart','account','transact','entry','period','balance'];
 
         $this->addCreateSql('company',
                             'CREATE TABLE `TABLE_NAME` (
@@ -30,6 +30,7 @@ class SetupData extends SetupModuledata
         $this->addCreateSql('account',
                             'CREATE TABLE `TABLE_NAME` (
                               `account_id` int(11) NOT NULL AUTO_INCREMENT,
+                              `chart_id` int(11) NOT NULL,
                               `name` varchar(250) CHARACTER SET latin1 NOT NULL,
                               `keywords` text CHARACTER SET latin1 NOT NULL,
                               `description` varchar(250) NOT NULL,
@@ -107,7 +108,20 @@ class SetupData extends SetupModuledata
                               KEY `fk_gl_balance_2` (`period_id`),
                               CONSTRAINT `fk_gl_balance_1` FOREIGN KEY (`account_id`) REFERENCES `TABLE_PREFIXaccount` (`account_id`) ON UPDATE NO ACTION,
                               CONSTRAINT `fk_gl_balance_2` FOREIGN KEY (`period_id`) REFERENCES `TABLE_PREFIXperiod` (`period_id`) ON UPDATE NO ACTION
-                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'); 
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+
+        $this->addCreateSql('chart',
+                            'CREATE TABLE `TABLE_NAME` (
+                              `id` int(11) NOT NULL AUTO_INCREMENT,
+                              `id_parent` int(11) NOT NULL,
+                              `title` varchar(255) NOT NULL,
+                              `level` int(11) NOT NULL,
+                              `lineage` varchar(255) NOT NULL,
+                              `rank` int(11) NOT NULL,
+                              `rank_end` int(11) NOT NULL,
+                              `type_id` varchar(64) NOT NULL,
+                              PRIMARY KEY (`id`)
+                            ) ENGINE=MyISAM DEFAULT CHARSET=utf8');  
 
            
         //initialisation
@@ -116,7 +130,7 @@ class SetupData extends SetupModuledata
         
 
         //updates use time stamp in ['YYYY-MM-DD HH:MM'] format, must be unique and sequential
-        //$this->addUpdateSql('YYYY-MM-DD HH:MM','Update TABLE_PREFIX--- SET --- "X"');
+        $this->addUpdateSql('2020-06-19 12:00','ALTER TABLE TABLE_PREFIXaccount ADD COLUMN `chart_id` INT NOT NULL AFTER `account_id`');
     }
 }
 

@@ -25,6 +25,9 @@ class Account extends Table
 
         $this->addTableCol(array('id'=>'account_id','type'=>'INTEGER','title'=>'Account ID','key'=>true,'key_auto'=>true,'list'=>true));
         $this->addTableCol(array('id'=>'type_id','type'=>'STRING','title'=>'Type'));
+        if(CHART_SETUP) {
+            $this->addTableCol(array('id'=>'chart_id','type'=>'INTEGER','title'=>'Report Chart','join'=>'title FROM '.TABLE_PREFIX.'chart WHERE id'));
+        }    
         $this->addTableCol(array('id'=>'name','type'=>'STRING','title'=>'Account name'));
         $this->addTableCol(array('id'=>'abbreviation','type'=>'STRING','title'=>'Abbreviation/ Code'));
         $this->addTableCol(array('id'=>'description','type'=>'STRING','title'=>'Description','size'=>40,'required'=>false));
@@ -44,6 +47,43 @@ class Account extends Table
             
         $this->addSelect('status','(SELECT "OK") UNION (SELECT "HIDE")');
         $this->addSelect('type_id',array('list'=>ACC_TYPE));
+        
+        if(CHART_SETUP) {
+            $sql_chart = 'SELECT id,CONCAT(IF(level > 1,REPEAT("--",level - 1),""),title) FROM '.TABLE_PREFIX.'chart  ORDER BY rank';
+            $this->addSelect('chart_id',$sql_chart);
+        }    
+    }
+
+    protected function beforeUpdate($id,$context,&$data,&$error) 
+    {
+        
+        //first part of account type must be ASSET,LIABILITY,INCOME,EXPENSE,EQUITY
+        $arr = explode('_',$data['type_id']);
+        $base_type_id = $arr[0];
+
+        if(CHART_SETUP) {
+            $sql = 'SELECT * FROM '.TABLE_PREFIX.'chart WHERE id = "'.$this->db->escapeSql($data['chart_id']).'" ';
+            $chart = $this->db->readSqlRecord($sql);
+
+            if($base_type_id !== $chart['type_id']) {
+                $error .= 'Account type['.$data['type_id'].'] is not compatible with Report Chart type['.$chart['type_id'].'] ';
+            } else {
+                $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'chart WHERE id_parent = "'.$this->db->escapeSql($data['chart_id']).'" ';
+                $count_parent = $this->db->readSqlValue($sql);
+                if($count_parent > 0) $error .= 'Assigned chart node['.$chart['title'].'] is not a terminal node(There are '.$count_parent.' child nodes) ';    
+            }
+        }    
+
+        if($context === 'UPDATE' ) {
+            $data_original = $this->get($id);
+
+            $arr = explode('_',$data_original['type_id']);
+            $base_type_id_original = $arr[0];
+
+            if($base_type_id_original !== $base_type_id) {
+                $error .= 'Account base type['.$base_type_id.'] cannot change from original['.$base_type_id_original.']. ';
+            }
+        } 
     }
 
     protected function afterUpdate($id,$edit_type,$form) {

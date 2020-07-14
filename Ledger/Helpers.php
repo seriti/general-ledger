@@ -361,6 +361,419 @@ class Helpers {
         if($error === '') return $period; else return false;    
     }
     
+
+
+    //construct balances from chart of accounts 
+    //$type_id = ASSET,LIABILITY,EQUITY
+    public static function processChartBlocks($type_id,$chart_tree,$balances,$spacer,&$type_block,&$type_total,$options = [])
+    {
+        switch ($type_id) {
+            case 'ASSET':
+                $type_name = 'ASSETS';
+                break;
+            case 'LIABILITY':
+                $type_name = 'LIABILITIES';
+                break;
+            case 'EQUITY':
+                $type_name = 'EQUITY';
+                if(!isset($options['open_pl'])) $options['open_pl'] = 0;
+                break;
+            case 'INCOME':
+                $type_name = 'INCOME';
+                break;
+            case 'EXPENSE':
+                $type_name = 'EXPENSES';
+                break;
+        }
+
+        //main block data array
+        $type_block = [];
+        $type_total = 0;
+
+        //sub block setup
+        $block_title = [];
+        $block_total = [];
+
+        //initialise previous chart level
+        $chart_prev = ['level'=>'0'];
+    
+        $r = 0;
+        $type_block[0][$r] = $type_name .':';
+        $type_block[1][$r] = '';
+
+        foreach($balances as $chart_id=>$acc_balances) {
+            $chart = $chart_tree[$chart_id];
+            if($chart['type_id'] === $type_id ) {
+
+                if($chart['level'] > $chart_prev['level']) {
+                    $block_title[$chart['level']] = $chart['title'];
+                    $block_total[$chart['level']] = 0;
+                }
+                
+                if($chart['level'] === $chart_prev['level']) {
+                    $r++;
+                    $indent = str_repeat($spacer,$chart['level']-1);
+                    $type_block[0][$r] = $indent.'TOTAL: '.$block_title[$chart['level']].':';
+                    $type_block[1][$r] = $block_total[$chart['level']];
+
+                    $block_total[$chart['level']] = 0;
+                    $block_title[$chart['level']] = $chart['title'];
+
+                    $r++;
+                    $type_block[0][$r] = '';
+                    $type_block[1][$r] = '';
+                }
+
+                if($chart['level'] < $chart_prev['level']) {
+
+                    for($level = $chart_prev['level']; $level >= $chart['level']; $level--) {
+                        $r++;
+                        $indent = str_repeat($spacer,$level-1);
+                        $type_block[0][$r] = $indent.'TOTAL: '.$block_title[$level].':';
+                        $type_block[1][$r] = $block_total[$level];
+
+                        $r++;
+                        $type_block[0][$r] = '';
+                        $type_block[1][$r] = '';
+
+                        $block_total[$level] = 0;
+                        $block_title[$level] = $chart['title'];
+                    }
+                } 
+                
+                if(count($acc_balances)) {
+                    $total = 0;
+                    $indent = str_repeat($spacer,$chart['level']-1);
+                    
+                    foreach($acc_balances as $account_id=>$balance) {
+                        $r++;
+                        $rt++;
+                        $type_block[0][$r] = $indent.$balance['name'];
+                        $type_block[1][$r] = $balance['account_balance'];
+                        $total+=floatval($balance['account_balance']);
+                    } 
+                    
+                    $type_total+=$total;
+                    
+                } else {
+                    $total = 0;
+                }
+
+                foreach($block_title as $level=>$title) {
+                    if($level <= $chart['level']) $block_total[$level]+=$total;
+                }
+
+                //chart tree root section headers, must come at end of loop
+                if($chart['level'] == 1) {
+                    $r++;
+                    $type_block[0][$r] = strtoupper($chart['title']);
+                    $type_block[1][$r] = '';
+                }
+
+
+                $chart_prev = $chart;
+            }           
+        }
+
+        for($level = $chart_prev['level']; $level >= 1; $level--) {
+            $r++;
+            $indent = str_repeat($spacer,$level-1);
+            $type_block[0][$r] = $indent.'TOTAL: '.$block_title[$level].':';
+            $type_block[1][$r] = $block_total[$level];
+
+            $r++;
+            $type_block[0][$r] = '';
+            $type_block[1][$r] = '';
+        }
+
+        if($type_id === 'EQUITY' and $options['open_pl'] > 0) {
+            $r++;
+            $type_block[0][$r] = 'CUSTOM_ROW';
+            $equity[1][$r] = 'BLANK';
+            $r++;
+            $type_block[0][$r] = 'OPEN P&L(Income-Expenses)';
+            $type_block[1][$r] = $options['open_pl'];
+            $type_total += $options['open_pl'];
+
+        }
+
+        //show total type_block
+        if($type_total != 0) {
+            $r++;
+            $type_block[0][$r] = 'CUSTOM_ROW';
+            $type_block[1][$r] = 'BLANK';
+            $r++;
+            $type_block[0][$r] = 'Total '.$type_name.':';
+            $type_block[1][$r] = $type_total; 
+        } else {
+            $type_block[1][$r] = 'No '.$type_name.' balances'; 
+        }
+
+    }
+    //NB: period_id is company specific!
+    public static function balanceSheetChart($db,$period_id,$options=[],&$error) {
+        $error_tmp = '';
+        $error = '';
+        $output = [];
+             
+        //get period balances assuming already calculated
+        $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description,C.id AS chart_id,C.type_id AS chart_type_id '.
+               'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
+                     'JOIN '.TABLE_PREFIX.'chart AS C ON(A.chart_id = C.id)'.
+               'WHERE B.period_id = "'.$db->escapeSql($period_id).'" '.
+               'ORDER BY A.type_id ';
+        $balances = $db->readSqlArray($sql);  
+        if($balances == 0) $error .= 'NO balances found for period!'; 
+
+        $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
+               'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
+        $chart_tree = $db->readSqlArray($sql);
+        if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
+     
+        if($error !== '') return false;
+
+        //generate balance sheet
+        $data = [];
+        $income = 0.00;
+        $expenses = 0.00;
+        $open_pl = 0.00;
+        
+        //setup empty balance sheet account arrays
+        foreach($chart_tree as $chart_id=>$chart) {
+            if($chart['type_id'] !== 'INCOME' and $chart['type_id'] !== 'EXPENSE') { 
+                $data[$chart_id] = []; 
+            }  
+        }  
+         
+        //organise balances into chart_id arrays and assign any Open P&L
+        foreach($balances as $account_id=>$balance) {
+            $data[$balance['chart_id']][$account_id] = $balance;
+            
+            //NB: should be zero if period CLOSED
+            if(substr($balance['type_id'],0,6) === 'INCOME') $income+=floatval($balance['account_balance']);
+            if(substr($balance['type_id'],0,7) === 'EXPENSE') $expenses+=floatval($balance['account_balance']);
+        } 
+        $open_pl = $income-$expenses;
+
+        //indent spacer for sub chart/accounts 
+        $spacer = '- - ';  
+        $block_options = [];
+        $block_options['open_pl'] = $open_pl;
+               
+        //prepare account arrays for html or pdf 
+        $assets = [];     
+        $total_asset = 0.00;
+        self::processChartBlocks('ASSET',$chart_tree,$data,$spacer,$assets,$total_asset);
+
+        
+        $total_liability = 0.00;
+        $liability = [];
+        self::processChartBlocks('LIABILITY',$chart_tree,$data,$spacer,$liability,$total_liability);
+
+        
+        $total_equity = 0.00;
+        $equity = [];
+        self::processChartBlocks('EQUITY',$chart_tree,$data,$spacer,$equity,$total_equity,$block_options);
+        
+
+        //finally setup output data
+        $output['assets'] = $assets;
+        $output['total_asset'] = $total_asset;
+
+        $output['liability'] = $liability;
+        $output['total_liability'] = $total_liability;
+
+        $output['equity'] = $equity;
+        $output['total_equity'] = $total_equity;
+
+            
+        return $output;
+    }        
+
+    public static function balanceSheetBasic($db,$period_id,$options=[],&$error) {
+        $error_tmp = '';
+        $error = '';
+        $output = [];
+        
+        //get period balances
+        $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description '.
+               'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
+               'WHERE B.period_id = "'.$db->escapeSql($period_id).'" '.
+               'ORDER BY A.type_id ';
+        $balances = $db->readSqlArray($sql);  
+        if($balances == 0) $error .= 'NO balances found for period!'; 
+
+        if($error !== '') return false;  
+                                
+        $data = [];
+        $income = 0.00;
+        $expenses = 0.00;
+        $open_pl = 0.00;
+        
+        //setup empty balance sheet account arrays
+        foreach(ACC_TYPE as $type_id=>$name) {
+            if(substr($type_id,0,6) !== 'INCOME' and substr($type_id,0,7) !== 'EXPENSE') { 
+                $data[$type_id] = []; 
+            }  
+        }  
+                    
+        //organise balances into type_id arrays
+        foreach($balances as $account_id=>$balance) {
+            $data[$balance['type_id']][$account_id] = $balance;
+            
+            //NB: should be zero if period CLOSED
+            if(substr($balance['type_id'],0,6) === 'INCOME') $income+=floatval($balance['account_balance']);
+            if(substr($balance['type_id'],0,7) === 'EXPENSE') $expenses+=floatval($balance['account_balance']);
+        } 
+        $open_pl = $income-$expenses;
+        
+        //prepare account arrays for html or pdf      
+        $total_asset = 0.00;
+        $assets = [];
+        $r = 0;
+        $assets[0][$r] = 'ASSETS:';
+        $assets[1][$r] = '';
+        //get all asset balances
+        foreach($data as $type_id=>$data_arr) {
+            if((substr($type_id,0,5) === 'ASSET') and count($data_arr)) {
+                $rt = 0;
+                $total = 0;
+                foreach($data_arr as $account_id=>$balance) {
+                    $r++;
+                    $rt++;
+                    $assets[0][$r] = $balance['name'];
+                    $assets[1][$r] = $balance['account_balance'];
+                    $total+=floatval($balance['account_balance']);
+                } 
+                $total_asset+=$total;
+                if($rt > 1) {
+                    $r++;
+                    $assets[0][$r] = 'CUSTOM_ROW';
+                    $assets[1][$r] = 'BLANK';
+                    $r++;
+                    $assets[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
+                    $assets[1][$r] = $total;
+                }  
+            } 
+        }
+        //show total assets
+        if($total_asset != 0) {
+            $r++;
+            $assets[0][$r] = 'CUSTOM_ROW';
+            $assets[1][$r] = 'BLANK';
+            $r++;
+            $assets[0][$r] = 'Total ASSETS:';
+            $assets[1][$r] = $total_asset; 
+        } else {
+            $assets[1][$r] = 'No asset balances'; 
+        }   
+        
+        
+        $total_liability = 0.00;
+        $liability = [];
+        $r = 0;
+        $liability[0][$r] = 'LIABILITIES:';
+        $liability[1][$r] = '';
+        //get all liability balances
+        foreach($data as $type_id=>$data_arr) {
+            if((substr($type_id,0,9) === 'LIABILITY') and count($data_arr)) {
+                $rt = 0;
+                $total = 0;
+                foreach($data_arr as $account_id=>$balance) {
+                    $r++;
+                    $rt++;
+                    $liability[0][$r] = $balance['name'];
+                    $liability[1][$r] = $balance['account_balance'];
+                    $total+=floatval($balance['account_balance']);
+                } 
+                $total_liability+=$total;
+                if($rt > 1) {
+                    $r++;
+                    $liability[0][$r] = 'CUSTOM_ROW';
+                    $liability[1][$r] = 'BLANK';
+                    $r++;
+                    $liability[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
+                    $liability[1][$r] = $total;
+                }  
+            } 
+        }
+        //show total liabilities
+        if($total_liability!=0) {
+            $r++;
+            $liability[0][$r] = 'CUSTOM_ROW';
+            $liability[1][$r] = 'BLANK';
+            $r++;
+            $liability[0][$r] = 'Total LIABILITIES:';
+            $liability[1][$r] = $total_liability; 
+        } else {
+            $liability[1][$r] = 'No liability balances'; 
+        }
+        
+        $total_equity = 0.00;
+        $equity = [];
+        $r = 0;
+        $equity[0][$r] = 'EQUITY:';
+        $equity[1][$r] = '';
+        //get all asset balances
+        foreach($data as $type_id=>$data_arr) {
+            if((substr($type_id,0,6) === 'EQUITY') and count($data_arr)) {
+                $rt = 0;
+                $total = 0;
+                foreach($data_arr as $account_id=>$balance) {
+                    $r++;
+                    $rt++;
+                    $equity[0][$r] = $balance['name'];
+                    $equity[1][$r] = $balance['account_balance'];
+                    $total+=floatval($balance['account_balance']);
+                } 
+                $total_equity+=$total;
+                if($rt > 1) {
+                    $r++;
+                    $equity[0][$r] = 'CUSTOM_ROW';
+                    $equity[1][$r] = 'BLANK';
+                    $r++;
+                    $equity[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
+                    $equity[1][$r] = $total;
+                } 
+                 
+            } 
+        }
+        
+        //insert any current PL for non closed periods
+        if($open_pl != 0.00) {
+            $r++;
+            $equity[0][$r] = 'CUSTOM_ROW';
+            $equity[1][$r] = 'BLANK';
+            $r++;
+            $equity[0][$r] = 'OPEN P&L(Income-Expenses)';
+            $equity[1][$r] = $open_pl;
+            $total_equity+=$open_pl;
+        }
+        
+        //show total assets
+        if($total_equity != 0) {
+            $r++;
+            $equity[0][$r] = 'CUSTOM_ROW';
+            $equity[1][$r] = 'BLANK';
+            $r++;
+            $equity[0][$r] = 'Total EQUITY:';
+            $equity[1][$r] = $total_equity; 
+        } else {
+            $equity[1][$r] = 'No equity balances'; 
+        }
+
+        $output['assets'] = $assets;
+        $output['total_asset'] = $total_asset;
+
+        $output['liability'] = $liability;
+        $output['total_liability'] = $total_liability;
+
+        $output['equity'] = $equity;
+        $output['total_equity'] = $total_equity;
+            
+        return $output;
+    }    
+
     public static function balanceSheet($db,$company_id,$period_id,$options=[],&$error) {
         $error_tmp = '';
         $error = '';
@@ -373,10 +786,21 @@ class Helpers {
         
         if(!isset($options['format'])) $options['format'] = 'HTML';
         
+        //setup & calculate period balances
         $period = self::setupReportPeriod($db,'BALANCE',$company_id,$period_id,$error_tmp);
         if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
-             
+        
+        if(CHART_SETUP) {
+            $balances = self::balanceSheetChart($db,$period_id,[],$error_tmp);
+        } else {
+            $balances = self::balanceSheetBasic($db,$period_id,[],$error_tmp);  
+        }    
+        if($error_tmp !== '') $error .= 'Balances ERROR: '.$error_tmp;
+
+        if($error !== '') return false;
+        
         //get period balances
+        /*
         if($error === '') {
             $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description '.
                    'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
@@ -543,131 +967,334 @@ class Helpers {
                 $equity[1][$r] = $total_equity; 
             } else {
                 $equity[1][$r] = 'No equity balances'; 
-            }  
-            
-            //left and right balance sheet totals
-            $left_total = $total_asset; 
-            $right_total = $total_equity+$total_liability;
-            
-            //layout setup
-            $row_h = 7;//ignored for html
-            $align = 'L';//ignored for html
-            $col_width = array(100,100);
-            $col_type = array('','DBL2');
-            $html_options = [];
-            $output = [];
-                                    
-            if($options['format']=='HTML') {
-                $left_col = Html::arrayDrawTable($assets,$row_h,$col_width,$col_type,$align,$html_options,$output);
-
-                $right_col = Html::arrayDrawTable($liability,$row_h,$col_width,$col_type,$align,$html_options,$output);
-                $right_col .= '<br/>'; 
-                $right_col .=  Html::arrayDrawTable($equity,$row_h,$col_width,$col_type,$align,$html_options,$output);
-                
-                $html = '<h1>'.$company['name'].' Balance sheet for '.$period['name'].'</h1>'.
-                        '<table class="table  table-striped table-bordered table-hover table-condensed">'.
-                        '<tr valign="top"><td>'.$left_col.'</td><td valign="top">'.$right_col.'</td></tr>'.
-                        '<tr><td align="right">Balance: '.number_format($left_total,2).'</td>'.
-                                '<td align="right">Balance: '.number_format($right_total,2).'</td></tr>'.
-                        '</table>';
-            }   
-            
-            if($options['format'] === 'CSV') {
-                $csv_data = '';
-                $doc_name = $company['name'].'_balance_sheet_'.$period['name'].'.csv';
-                $doc_name = str_replace(' ','_',$doc_name);
-                
-                if(count($assets != 0)) {
-                    $csv_data .=  Csv::arrayDumpCsv($assets);
-                    $csv_data .= "\r\n";
-                }
-                
-                if(count($liability!=0)) {
-                    $csv_data .=  Csv::arrayDumpCsv($liability);
-                    $csv_data .= "\r\n";
-                }
-                
-                if(count($equity!=0)) {
-                    $csv_data.= Csv::arrayDumpCsv($equity);
-                    $csv_data.= "\r\n";
-                }
-                
-                
-                Doc::outputDoc($csv_data,$doc_name,'DOWNLOAD','csv');
-                exit;
             } 
-            
-            if($options['format'] === 'PDF') {
-                $pdf_dir = BASE_UPLOAD.UPLOAD_DOCS;
-                $pdf_name = $company['name'].'_balance_sheet_'.$period['name'].'.pdf';
-                $pdf_name = str_replace(' ','_',$pdf_name);
+        }     
+        */
+
+
+        $assets = $balances['assets'];
+        $total_asset = $balances['total_asset'];
+        $liability = $balances['liability'];
+        $total_liability = $balances['total_liability'];
+        $equity = $balances['equity'];
+        $total_equity = $balances['total_equity'];
+
+        //left and right balance sheet totals
+        $left_total = $total_asset; 
+        $right_total = $total_equity+$total_liability;
+        
+        //layout setup
+        $row_h = 7;//ignored for html
+        $align = 'L';//ignored for html
+        $col_width = array(100,100);
+        $col_type = array('','DBL0');
+        $html_options = [];
+        $output = [];
                                 
-                $pdf = new Pdf('Portrait','mm','A4');
-                $pdf->AliasNbPages();
-                    
-                $pdf->setupLayout(['db'=>$db]);
-                //change setup system setting if there is one
-                //$pdf->h1_title=array(33,33,33,'B',10,'',8,20,'L','NO',33,33,33,'B',12,20,180);
-                //$pdf->bg_image=$logo;
-                
-                //$pdf->footer_text=$footer_text;
+        if($options['format']=='HTML') {
+            $left_col = Html::arrayDrawTable($assets,$row_h,$col_width,$col_type,$align,$html_options,$output);
 
-                //NB footer must be set before this
-                $pdf->AddPage();
+            $right_col = Html::arrayDrawTable($liability,$row_h,$col_width,$col_type,$align,$html_options,$output);
+            $right_col .= '<br/>'; 
+            $right_col .=  Html::arrayDrawTable($equity,$row_h,$col_width,$col_type,$align,$html_options,$output);
+            
+            $html = '<h1>'.$company['name'].' Balance sheet for '.$period['name'].'</h1>'.
+                    '<table class="table  table-striped table-bordered table-hover table-condensed">'.
+                    '<tr valign="top"><td>'.$left_col.'</td><td valign="top">'.$right_col.'</td></tr>'.
+                    '<tr><td align="right">Balance: '.number_format($left_total,2).'</td>'.
+                            '<td align="right">Balance: '.number_format($right_total,2).'</td></tr>'.
+                    '</table>';
+        }   
+        
+        if($options['format'] === 'CSV') {
+            $csv_data = '';
+            $doc_name = $company['name'].'_balance_sheet_'.$period['name'].'.csv';
+            $doc_name = str_replace(' ','_',$doc_name);
+            
+            if(count($assets != 0)) {
+                $csv_data .=  Csv::arrayDumpCsv($assets);
+                $csv_data .= "\r\n";
+            }
+            
+            if(count($liability!=0)) {
+                $csv_data .=  Csv::arrayDumpCsv($liability);
+                $csv_data .= "\r\n";
+            }
+            
+            if(count($equity!=0)) {
+                $csv_data.= Csv::arrayDumpCsv($equity);
+                $csv_data.= "\r\n";
+            }
+            
+            
+            Doc::outputDoc($csv_data,$doc_name,'DOWNLOAD','csv');
+            exit;
+        } 
+        
+        if($options['format'] === 'PDF') {
+            $pdf_dir = BASE_UPLOAD.UPLOAD_DOCS;
+            $pdf_name = $company['name'].'_balance_sheet_'.$period['name'].'.pdf';
+            $pdf_name = str_replace(' ','_',$pdf_name);
+                            
+            $pdf = new Pdf('Portrait','mm','A4');
+            $pdf->AliasNbPages();
+                
+            $pdf->setupLayout(['db'=>$db]);
+            //change setup system setting if there is one
+            //$pdf->h1_title=array(33,33,33,'B',10,'',8,20,'L','NO',33,33,33,'B',12,20,180);
+            //$pdf->bg_image=$logo;
+            
+            //$pdf->footer_text=$footer_text;
 
-                $row_h = 5;
-                                         
-                $pdf->SetY(40);
-                $pdf->changeFont('H1');
-                $pdf->Cell(50,$row_h,'Balance Sheet :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,$company['name'],0,0,'L',0);
+            //NB footer must be set before this
+            $pdf->AddPage();
+
+            $row_h = 5;
+                                     
+            $pdf->SetY(40);
+            $pdf->changeFont('H1');
+            $pdf->Cell(50,$row_h,'Balance Sheet :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,$company['name'],0,0,'L',0);
+            $pdf->Ln($row_h);
+            $pdf->Cell(50,$row_h,'For period :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,$period['name'].' from '.$period['date_start'].' to '.$period['date_end'],0,0,'L',0);
+            $pdf->Ln($row_h*2);
+            
+            
+            //ASSETS
+            if(count($assets!=0)) {
+                $pdf->changeFont('TEXT');
+                $pdf->arrayDrawTable($assets,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
-                $pdf->Cell(50,$row_h,'For period :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,$period['name'].' from '.$period['date_start'].' to '.$period['date_end'],0,0,'L',0);
-                $pdf->Ln($row_h*2);
-                
-                
-                //ASSETS
-                if(count($assets!=0)) {
-                    $pdf->changeFont('TEXT');
-                    $pdf->arrayDrawTable($assets,$row_h,$col_width,$col_type,'L');
-                    $pdf->Ln($row_h);
-                }
-                
-                //LIABILITIES
-                if(count($liability!=0)) {
-                    $pdf->changeFont('TEXT');
-                    $pdf->arrayDrawTable($liability,$row_h,$col_width,$col_type,'L');
-                    $pdf->Ln($row_h);
-                }
-                
-                //EQUITY
-                if(count($equity!=0)) {
-                    $pdf->changeFont('TEXT');
-                    $pdf->arrayDrawTable($equity,$row_h,$col_width,$col_type,'L');
-                    $pdf->Ln($row_h);
-                }
-                
-                $pdf->changeFont('H1');
-                $pdf->Cell(50,$row_h,'Total Assets :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,number_format(($total_asset),2),0,0,'L',0);
+            }
+            
+            //LIABILITIES
+            if(count($liability!=0)) {
+                $pdf->changeFont('TEXT');
+                $pdf->arrayDrawTable($liability,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
-                $pdf->Cell(50,$row_h,'Total Liabilities & Equity :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,number_format(($total_equity+$total_liability),2),0,0,'L',0);
+            }
+            
+            //EQUITY
+            if(count($equity!=0)) {
+                $pdf->changeFont('TEXT');
+                $pdf->arrayDrawTable($equity,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
-                
-                //finally create pdf file
-                //$file_path=$pdf_dir.$pdf_name;
-                //$pdf->Output($file_path,'F');   
-                //or send to browser
-                $pdf->Output($pdf_name,'D'); 
-                exit; 
-            }  
+            }
+            
+            $pdf->changeFont('H1');
+            $pdf->Cell(50,$row_h,'Total Assets :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,number_format(($total_asset),2),0,0,'L',0);
+            $pdf->Ln($row_h);
+            $pdf->Cell(50,$row_h,'Total Liabilities & Equity :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,number_format(($total_equity+$total_liability),2),0,0,'L',0);
+            $pdf->Ln($row_h);
+            
+            //finally create pdf file
+            //$file_path=$pdf_dir.$pdf_name;
+            //$pdf->Output($file_path,'F');   
+            //or send to browser
+            $pdf->Output($pdf_name,'D'); 
+            exit; 
         }  
+      
         
         return $html;  
     }
     
+    public static function incomeStatementBasic($db,$company_id,$period_id,$options=[],&$error)
+    {
+        $error = '';
+        $error_tmp = '';
+
+        $period = self::setupReportPeriod($db,'INCOME',$company_id,$period_id,$error_tmp);
+        if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
+
+        //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
+        $sql = 'SELECT account_id,name,type_id,description '.
+               'FROM '.TABLE_PREFIX.'account '.
+               'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
+                    '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%") ';
+        $accounts = $db->readSqlArray($sql);   
+        if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
+        
+        if($error !== '') return false;
+        
+        //process entries and generate balances excluding CLOSE transactions if any for period
+        //NB cannot use balances as for a CLOSED period they will be zero
+   
+        $balances = [];
+        foreach($accounts as $account_id=>$account) {
+            $debit_total = 0;
+            $credit_total = 0;
+            
+            $sql = 'SELECT E.debit_credit,SUM(E.amount) '.
+                   'FROM '.TABLE_PREFIX.'entry AS E JOIN '.TABLE_PREFIX.'transact AS T ON(E.transact_id = T.transact_id) '.
+                   'WHERE E.account_id = "'.$account_id.'" AND T.type_id <> "CLOSE" AND '.
+                         'E.date >= "'.$period['date_start'].'" AND E.date <= "'.$period['date_end'].'" '.
+                   'GROUP BY E.debit_credit ';
+            $entry = $db->readSqlList($sql); 
+            if($entry != 0) {
+                if(isset($entry['D'])) $debit_total = $entry['D'];
+                if(isset($entry['C'])) $credit_total = $entry['C'];
+            }
+        
+            if(substr($account['type_id'],0,7) === 'EXPENSE') {
+                //DEBIT balances
+                $balances[$account_id] = $debit_total-$credit_total; 
+            } 
+            
+            if(substr($account['type_id'],0,6) === 'INCOME')  {
+                //CREDIT balances
+                $balances[$account_id] = $credit_total-$debit_total; 
+            }  
+        }
+    
+        //generate income and expense blocks 
+        $income = [];
+        $expense = [];
+        $total_income = 0.00;
+        $total_expense = 0.00;
+                
+        //determine which account balances to show(ie exclude zero accounts for now)
+        $ri = 0;
+        $income[0][$ri] = 'INCOME:';
+        $income[1][$ri] = '';
+        $re = 0;
+        $expense[0][$re] = 'EXPENSE:';
+        $expense[1][$re] = '';
+        foreach($accounts as $account_id=>$account) {
+            if(substr($account['type_id'],0,6) === 'INCOME' and $balances[$account_id] != 0) {
+                $ri++;
+                $income[0][$ri] = $account['name'];
+                $income[1][$ri] = $balances[$account_id];
+                //$income[$account_id] = $balances[$account_id];
+                $total_income+=$balances[$account_id];
+            } 
+                 
+            if(substr($account['type_id'],0,7) === 'EXPENSE' and $balances[$account_id] != 0) {
+                $re++;
+                $expense[0][$re] = $account['name'];
+                $expense[1][$re] = $balances[$account_id];
+                //$expense[$account_id] = $balances[$account_id];
+                $total_expense+=$balances[$account_id];
+            } 
+        } 
+        
+        //add totals
+        $ri++;
+        $income[0][$ri] = 'CUSTOM_ROW';
+        $income[1][$ri] = 'BLANK';
+        $ri++;
+        $income[0][$ri] = 'TOTAL Income';
+        $income[1][$ri] = $total_income;
+        $re++;
+        $expense[0][$re] = 'CUSTOM_ROW';
+        $expense[1][$re] = 'BLANK';
+        $re++;
+        $expense[0][$re] = 'TOTAL Expense';
+        $expense[1][$re] = $total_expense;
+
+        //generte output data
+        $output = [];
+        $output['period'] = $period; 
+        $output['income'] = $income; 
+        $output['total_income'] = $total_income;
+        $output['expense'] = $expense; 
+        $output['total_expense'] = $total_expense;
+            
+        return $output;
+    }
+
+    public static function incomeStatementChart($db,$company_id,$period_id,$options=[],&$error)
+    {
+        $error = '';
+        $error_tmp = '';
+
+        $period = self::setupReportPeriod($db,'INCOME',$company_id,$period_id,$error_tmp);
+        if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
+
+        //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
+        $sql = 'SELECT A.account_id,A.name,A.type_id,A.description,C.id AS chart_id,C.type_id AS chart_type_id '.
+               'FROM '.TABLE_PREFIX.'account AS A '.
+               'JOIN '.TABLE_PREFIX.'chart AS C ON(A.chart_id = C.id)'.
+               'WHERE A.company_id = "'.$db->escapeSql($company_id).'" AND '.
+                    '(A.type_id LIKE "INCOME%" OR A.type_id LIKE "EXPENSE%") ';
+        $accounts = $db->readSqlArray($sql);   
+        if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
+        
+        if($error !== '') return false;
+        
+        //generate balances excluding CLOSE transactions if any for period
+        //NB *** cannot use balance records as for a CLOSED period they will be ZERO ****
+        $balances = [];
+        foreach($accounts as $account_id=>$account) {
+            $debit_total = 0;
+            $credit_total = 0;
+            
+            $sql = 'SELECT E.debit_credit,SUM(E.amount) '.
+                   'FROM '.TABLE_PREFIX.'entry AS E JOIN '.TABLE_PREFIX.'transact AS T ON(E.transact_id = T.transact_id) '.
+                   'WHERE E.account_id = "'.$account_id.'" AND T.type_id <> "CLOSE" AND '.
+                         'E.date >= "'.$period['date_start'].'" AND E.date <= "'.$period['date_end'].'" '.
+                   'GROUP BY E.debit_credit ';
+            $entry = $db->readSqlList($sql); 
+            if($entry != 0) {
+                if(isset($entry['D'])) $debit_total = $entry['D'];
+                if(isset($entry['C'])) $credit_total = $entry['C'];
+            }
+        
+            if(substr($account['type_id'],0,7) === 'EXPENSE') {
+                //DEBIT balances
+                $balance_calc = $debit_total-$credit_total;
+            } 
+            
+            if(substr($account['type_id'],0,6) === 'INCOME')  {
+                //CREDIT balances
+                $balance_calc = $credit_total-$debit_total; 
+            }  
+
+            $balances[$account_id] = ['name'=>$account['name'],'account_balance'=>$balance_calc,'chart_id'=>$account['chart_id']];
+        }
+
+        //get entire chart tree
+        $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
+                   'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
+        $chart_tree = $db->readSqlArray($sql);
+        if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
+     
+        //setup empty incpme statement block account arrays for INCOME and EXPENSE accountss
+        $data = [];
+        foreach($chart_tree as $chart_id=>$chart) {
+            if($chart['type_id'] === 'INCOME' or $chart['type_id'] === 'EXPENSE') { 
+                $data[$chart_id] = []; 
+            }  
+        }  
+        //finally assign balances to block array
+        foreach($balances as $account_id=>$balance) {
+            $data[$balance['chart_id']][$account_id] = $balance;
+            
+        } 
+
+        $spacer = '- - ';
+        $income = [];     
+        $total_income = 0.00;
+        self::processChartBlocks('INCOME',$chart_tree,$data,$spacer,$income,$total_income);
+
+        $expense = [];     
+        $total_expense = 0.00;
+        self::processChartBlocks('EXPENSE',$chart_tree,$data,$spacer,$expense,$total_expense);
+    
+        //generte output data
+        $output = [];
+        $output['period'] = $period; 
+        $output['income'] = $income; 
+        $output['total_income'] = $total_income;
+        $output['expense'] = $expense; 
+        $output['total_expense'] = $total_expense;
+            
+        return $output;
+    }
+
     public static function incomeStatement($db,$company_id,$period_id,$options=[],&$error) {
         $error_tmp = '';
         $error = '';
@@ -678,21 +1305,30 @@ class Helpers {
         
         //get company details
         $company = self::getCompany($db,$company_id);
+
+        if(CHART_SETUP) {
+            $data = self::incomeStatementChart($db,$company_id,$period_id,$options,$error);
+        } else {
+            $data = self::incomeStatementBasic($db,$company_id,$period_id,$options,$error);
+        }    
+        
+        if($error !== '') exit;
+
+
+
+        /*
+        //********************
+
         
         $period = self::setupReportPeriod($db,'INCOME',$company_id,$period_id,$error_tmp);
         if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
-        
-        //********************
-        
-        //escape SQL variables
-        $period_id = $db->escapeSql($period_id);
-        $company_id = $db->escapeSql($company_id);
+
         
         //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
         if($error === '') {  
             $sql = 'SELECT account_id,name,type_id,description '.
                    'FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$company_id.'" AND '.
+                   'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
                         '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%") ';
             $accounts = $db->readSqlArray($sql);   
             if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
@@ -731,153 +1367,185 @@ class Helpers {
             
         }
         
-        //generate income statement
-        if($error === '') {
-            $income = [];
-            $expense = [];
-            $total_income = 0.00;
-            $total_expense = 0.00;
-            $net_income = 0.00;
-            
-            //determine which account balances to show(ie exclude zero accounts for now)
-            $ri = 0;
-            $income[0][$ri] = 'INCOME:';
-            $income[1][$ri] = '';
-            $re = 0;
-            $expense[0][$re] = 'EXPENSE:';
-            $expense[1][$re] = '';
-            foreach($accounts as $account_id=>$account) {
-                if(substr($account['type_id'],0,6) === 'INCOME' and $balances[$account_id] != 0) {
-                    $ri++;
-                    $income[0][$ri] = $account['name'];
-                    $income[1][$ri] = $balances[$account_id];
-                    //$income[$account_id] = $balances[$account_id];
-                    $total_income+=$balances[$account_id];
-                } 
-                     
-                if(substr($account['type_id'],0,7) === 'EXPENSE' and $balances[$account_id] != 0) {
-                    $re++;
-                    $expense[0][$re] = $account['name'];
-                    $expense[1][$re] = $balances[$account_id];
-                    //$expense[$account_id] = $balances[$account_id];
-                    $total_expense+=$balances[$account_id];
-                } 
+        if(CHART_SETUP) {
+            $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
+                   'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
+            $chart_tree = $db->readSqlArray($sql);
+            if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
+         
+            //setup empty balance sheet account arrays
+            $data = [];
+            foreach($chart_tree as $chart_id=>$chart) {
+                if($chart['type_id'] === 'INCOME' and $chart['type_id'] === 'EXPENSE') { 
+                    $data[$chart_id] = []; 
+                }  
+            }  
+
+
+            //SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description,C.id AS chart_id,C.type_id AS chart_type_id
+            foreach($balances as $account_id=>$balance) {
+                $data[$balance['chart_id']][$account_id] = $balance;
+                
             } 
-            
-            //add totals
-            $ri++;
-            $income[0][$ri] = 'CUSTOM_ROW';
-            $income[1][$ri] = 'BLANK';
-            $ri++;
-            $income[0][$ri] = 'TOTAL Income';
-            $income[1][$ri] = $total_income;
-            $re++;
-            $expense[0][$re] = 'CUSTOM_ROW';
-            $expense[1][$re] = 'BLANK';
-            $re++;
-            $expense[0][$re] = 'TOTAL Expense';
-            $expense[1][$re] = $total_expense;   
-            
-            $net_income = $total_income-$total_expense;
-             
-            //layout setup
-            $row_h = 7;//ignored for html
-            $align = 'L';//ignored for html
-            $col_width = array(100,100);
-            $col_type = array('','DBL2');
-            $html_options = [];
-            $output = [];
-
-            if($options['format'] === 'HTML') {
-                $html .= '<div><h1>'.$company['name'].' Income statement for '.$period['name'].'</h1>';
-                $html .=  Html::arrayDrawTable($income,$row_h,$col_width,$col_type,$align,$html_options,$output);
-                $html .= '<br/>';
-                $html .=  Html::arrayDrawTable($expense,$row_h,$col_width,$col_type,$align,$html_options,$output);
-                $html .= '<br/>';
-                $html .= '<table class="table  table-striped table-bordered table-hover table-condensed">';
-                $html .= '<tr><td width="50%"><b>NET INCOME</b></td><td align="right"><b>'.number_format($net_income,2).'</b></td></tr>';
-                $html .= '</table>';
-                    
-                $html .= '</div>';
-            }
-            
-            if($options['format'] === 'CSV') {
-                $csv_data = ''; 
-                $doc_name = $company['name'].'_income_statement_'.$period['name'].'.csv';
-                $doc_name = str_replace(' ','_',$doc_name);
-                
-                if(count($income != 0)) {
-                    $csv_data .= Csv::arrayDumpCsv($income);
-                    $csv_data .= "\r\n";
-                }
-                
-                if(count($expense != 0)) {
-                    $csv_data .= Csv::arrayDumpCsv($expense);
-                    $csv_data .= "\r\n";
-                }
-                
-                Doc::outputDoc($csv_data,$doc_name,'DOWNLOAD','csv');
-                exit;
-            } 
-            
-            if($options['format'] === 'PDF') {
-                $pdf_dir = BASE_UPLOAD.UPLOAD_DOCS;
-                $pdf_name = $company['name'].'_income_statement_'.$period['name'].'.pdf';
-                $pdf_name = str_replace(' ','_',$pdf_name);
-                                
-                $pdf = new Pdf('Portrait','mm','A4');
-                $pdf->AliasNbPages();
-                    
-                $pdf->setupLayout(['db'=>$db]);
-                //change setup system setting if there is one
-                //$pdf->h1_title=array(33,33,33,'B',10,'',8,20,'L','NO',33,33,33,'B',12,20,180);
-                //$pdf->bg_image=$logo;
-                
-                //$pdf->footer_text=$footer_text;
-
-                //NB footer must be set before this
-                $pdf->AddPage();
-
-                $row_h = 5;
-                                         
-                $pdf->SetY(40);
-                $pdf->changeFont('H1');
-                $pdf->Cell(50,$row_h,'Income statement :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,$company['name'],0,0,'L',0);
-                $pdf->Ln($row_h);
-                $pdf->Cell(50,$row_h,'For period :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,$period['name'].' from '.$period['date_start'].' to '.$period['date_end'],0,0,'L',0);
-                $pdf->Ln($row_h*2);
-                
-                
-                //INCOME
-                if(count($income != 0)) {
-                    $pdf->changeFont('TEXT');
-                    $pdf->arrayDrawTable($income,$row_h,$col_width,$col_type,'L');
-                    $pdf->Ln($row_h);
-                }
-                
-                //EXPENSES
-                if(count($expense != 0)) {
-                    $pdf->changeFont('TEXT');
-                    $pdf->arrayDrawTable($expense,$row_h,$col_width,$col_type,'L');
-                    $pdf->Ln($row_h);
-                }
-                
-                $pdf->changeFont('H1');
-                $pdf->Cell(50,$row_h,'NET INCOME :',0,0,'R',0);
-                $pdf->Cell(50,$row_h,number_format(($net_income),2),0,0,'L',0);
-                $pdf->Ln($row_h);
-                
-                
-                //finally create pdf file
-                //$file_path=$pdf_dir.$pdf_name;
-                //$pdf->Output($file_path,'F');   
-                //or send to browser
-                $pdf->Output($pdf_name,'D'); 
-                exit; 
-            }
         }
+
+
+        if($error !== '') return false;
+
+        //generate income statement
+        $income = [];
+        $expense = [];
+        $total_income = 0.00;
+        $total_expense = 0.00;
+        $net_income = 0.00;
+        
+        //determine which account balances to show(ie exclude zero accounts for now)
+        $ri = 0;
+        $income[0][$ri] = 'INCOME:';
+        $income[1][$ri] = '';
+        $re = 0;
+        $expense[0][$re] = 'EXPENSE:';
+        $expense[1][$re] = '';
+        foreach($accounts as $account_id=>$account) {
+            if(substr($account['type_id'],0,6) === 'INCOME' and $balances[$account_id] != 0) {
+                $ri++;
+                $income[0][$ri] = $account['name'];
+                $income[1][$ri] = $balances[$account_id];
+                //$income[$account_id] = $balances[$account_id];
+                $total_income+=$balances[$account_id];
+            } 
+                 
+            if(substr($account['type_id'],0,7) === 'EXPENSE' and $balances[$account_id] != 0) {
+                $re++;
+                $expense[0][$re] = $account['name'];
+                $expense[1][$re] = $balances[$account_id];
+                //$expense[$account_id] = $balances[$account_id];
+                $total_expense+=$balances[$account_id];
+            } 
+        } 
+        
+        //add totals
+        $ri++;
+        $income[0][$ri] = 'CUSTOM_ROW';
+        $income[1][$ri] = 'BLANK';
+        $ri++;
+        $income[0][$ri] = 'TOTAL Income';
+        $income[1][$ri] = $total_income;
+        $re++;
+        $expense[0][$re] = 'CUSTOM_ROW';
+        $expense[1][$re] = 'BLANK';
+        $re++;
+        $expense[0][$re] = 'TOTAL Expense';
+        $expense[1][$re] = $total_expense;   
+
+    //********************
+        $net_income = $total_income-$total_expense;
+        */
+
+        
+        $net_income = $data['total_income'] - $data['total_expense'];
+        $income = $data['income'];
+        $expense = $data['expense'];
+        $period = $data['period'];
+         
+        //layout setup
+        $row_h = 7;//ignored for html
+        $align = 'L';//ignored for html
+        $col_width = array(100,100);
+        $col_type = array('','DBL2');
+        $html_options = [];
+        $output = [];
+
+        if($options['format'] === 'HTML') {
+            $html .= '<div><h1>'.$company['name'].' Income statement for '.$period['name'].'</h1>';
+            $html .=  Html::arrayDrawTable($income,$row_h,$col_width,$col_type,$align,$html_options,$output);
+            $html .= '<br/>';
+            $html .=  Html::arrayDrawTable($expense,$row_h,$col_width,$col_type,$align,$html_options,$output);
+            $html .= '<br/>';
+            $html .= '<table class="table  table-striped table-bordered table-hover table-condensed">';
+            $html .= '<tr><td width="50%"><b>NET INCOME</b></td><td align="right"><b>'.number_format($net_income,2).'</b></td></tr>';
+            $html .= '</table>';
+                
+            $html .= '</div>';
+        }
+        
+        if($options['format'] === 'CSV') {
+            $csv_data = ''; 
+            $doc_name = $company['name'].'_income_statement_'.$period['name'].'.csv';
+            $doc_name = str_replace(' ','_',$doc_name);
+            
+            if(count($income != 0)) {
+                $csv_data .= Csv::arrayDumpCsv($income);
+                $csv_data .= "\r\n";
+            }
+            
+            if(count($expense != 0)) {
+                $csv_data .= Csv::arrayDumpCsv($expense);
+                $csv_data .= "\r\n";
+            }
+            
+            Doc::outputDoc($csv_data,$doc_name,'DOWNLOAD','csv');
+            exit;
+        } 
+        
+        if($options['format'] === 'PDF') {
+            $pdf_dir = BASE_UPLOAD.UPLOAD_DOCS;
+            $pdf_name = $company['name'].'_income_statement_'.$period['name'].'.pdf';
+            $pdf_name = str_replace(' ','_',$pdf_name);
+                            
+            $pdf = new Pdf('Portrait','mm','A4');
+            $pdf->AliasNbPages();
+                
+            $pdf->setupLayout(['db'=>$db]);
+            //change setup system setting if there is one
+            //$pdf->h1_title=array(33,33,33,'B',10,'',8,20,'L','NO',33,33,33,'B',12,20,180);
+            //$pdf->bg_image=$logo;
+            
+            //$pdf->footer_text=$footer_text;
+
+            //NB footer must be set before this
+            $pdf->AddPage();
+
+            $row_h = 5;
+                                     
+            $pdf->SetY(40);
+            $pdf->changeFont('H1');
+            $pdf->Cell(50,$row_h,'Income statement :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,$company['name'],0,0,'L',0);
+            $pdf->Ln($row_h);
+            $pdf->Cell(50,$row_h,'For period :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,$period['name'].' from '.$period['date_start'].' to '.$period['date_end'],0,0,'L',0);
+            $pdf->Ln($row_h*2);
+            
+            
+            //INCOME
+            if(count($income != 0)) {
+                $pdf->changeFont('TEXT');
+                $pdf->arrayDrawTable($income,$row_h,$col_width,$col_type,'L');
+                $pdf->Ln($row_h);
+            }
+            
+            //EXPENSES
+            if(count($expense != 0)) {
+                $pdf->changeFont('TEXT');
+                $pdf->arrayDrawTable($expense,$row_h,$col_width,$col_type,'L');
+                $pdf->Ln($row_h);
+            }
+            
+            $pdf->changeFont('H1');
+            $pdf->Cell(50,$row_h,'NET INCOME :',0,0,'R',0);
+            $pdf->Cell(50,$row_h,number_format(($net_income),2),0,0,'L',0);
+            $pdf->Ln($row_h);
+            
+            
+            //finally create pdf file
+            //$file_path=$pdf_dir.$pdf_name;
+            //$pdf->Output($file_path,'F');   
+            //or send to browser
+            $pdf->Output($pdf_name,'D'); 
+            exit; 
+        }
+        
         
         return $html;     
     }  
@@ -1326,6 +1994,12 @@ class Helpers {
         $acc_list[] = array('EXPENSE_FIXED','Entertainment','5180');
         $acc_list[] = array('EXPENSE_FIXED','Office security','5190');
         $acc_list[] = array('EXPENSE_FIXED','Employee wages PAYE','5200');
+
+        if(CHART_SETUP) {
+            //NB: readSqlList() will only return single result for each type_id, if more than one.
+            $sql = 'SELECT type_id,chart_id FROM '.TABLE_PREFIX.'account GROUP BY type_id,chart_id';
+            $chart_list = $db->readSqlList($sql);
+        }
                 
         
         $company_id = $db->escapeSql($company_id);
@@ -1338,10 +2012,19 @@ class Helpers {
             $error .= 'Cannot setup default accounts as ['.$count.'] accounts already exist! '.
                       'Can only setup default accounts where NO accounts exist for company!';  
         } else {
-            $sql = 'INSERT INTO '.TABLE_PREFIX.'account (company_id,type_id,name,abbreviation,status) VALUES ';
-            foreach($acc_list as $acc) {
-                $sql .= '("'.$company_id.'","'.$acc[0].'","'.$acc[1].'","'.$acc[2].'","OK"),';
-            }  
+            if(CHART_SETUP and $chart_list != 0) {
+                $sql = 'INSERT INTO '.TABLE_PREFIX.'account (company_id,type_id,chart_id,name,abbreviation,status) VALUES ';
+                foreach($acc_list as $acc) {
+                    if(isset($chart_list[$acc[0]])) $chart_id = $chart_list[$acc[0]]; else $chart_id = '0';
+                    $sql .= '("'.$company_id.'","'.$acc[0].'","'.$chart_id.'","'.$acc[1].'","'.$acc[2].'","OK"),';
+                } 
+            } else {
+                $sql = 'INSERT INTO '.TABLE_PREFIX.'account (company_id,type_id,name,abbreviation,status) VALUES ';
+                foreach($acc_list as $acc) {
+                    $sql .= '("'.$company_id.'","'.$acc[0].'","'.$acc[1].'","'.$acc[2].'","OK"),';
+                }    
+            }
+              
             //remove trailing ","
             $sql = substr($sql,0,-1);
             $db->executeSql($sql,$error_tmp); 

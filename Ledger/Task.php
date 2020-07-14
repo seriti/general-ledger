@@ -27,6 +27,10 @@ class Task extends SeritiTask
         $this->addTask('MANAGE','CHANGE_COMPANY','Change active company');
         $this->addTask('MANAGE','ALL_COMPANIES','Manage ALL companies');
         $this->addTask('MANAGE','ADD_COMPANY','Add a new company');
+        if(CHART_SETUP) {
+            $this->addTask('MANAGE','ACCOUNT_CHART','Setup chart of accounts for reports');
+        }    
+
         $this->addTask('MANAGE','SETUP_ACCOUNTS','Setup default accounts for a NEW company');
         $this->addTask('MANAGE','DELETE_ACCOUNTS','Delete unused accounts for a company');
     }
@@ -74,6 +78,12 @@ class Task extends SeritiTask
         
         if($id === 'ALL_COMPANIES') {
             $location = 'company';
+            header('location: '.$location);
+            exit;
+        }
+
+        if($id === 'ACCOUNT_CHART') {
+            $location = 'chart';
             header('location: '.$location);
             exit;
         }

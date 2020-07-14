@@ -61,6 +61,15 @@ class Config
                            'EXPENSE_FIXED'=>'EXPENSE: Fixed overheads',
                            'EXPENSE_OTHER'=>'EXPENSE: Other expenses']);
 
+        define('CHART_TYPE',['ASSET'=>'Asset',
+                             'LIABILITY'=>'Liability',
+                             'EQUITY'=>'Equity',
+                             'INCOME'=>'Income',
+                             'EXPENSE'=>'Expense']);
+
+        //set to true if you want to use full chart tree of accounts rather than basic setup 
+        define('CHART_SETUP',false);
+
         $user_data = $cache->retrieveAll();
         $table_company = TABLE_PREFIX.'company';
         if(!isset($user_data['company_id'])) {

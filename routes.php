@@ -23,8 +23,9 @@ $app->group('/admin', function () {
         $this->post('/ajax', \App\Ledger\Ajax::class);
         $this->any('/bank_import', \App\Ledger\ImportBankWizardController::class);
         $this->get('/setup_data', \App\Ledger\SetupDataController::class);
+        $this->any('/chart', \App\Ledger\ChartController::class);
     })->add(\App\Ledger\Config::class);
-
+        
 })->add(\App\User\ConfigAdmin::class);
 
 
