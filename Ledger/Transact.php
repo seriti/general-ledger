@@ -45,6 +45,8 @@ class Transact extends Table
 
         $this->addSearch(array('transact_id','date','amount','description',//'debit_accounts','credit_accounts',
                                'account_id_primary','account_id','type_id'),array('rows'=>2));
+
+        $this->addSearchAggregate(['sql'=>'SUM(T.amount)','title'=>'Total Amount']);
             
         $this->addSelect('status','(SELECT "NEW") UNION (SELECT "OK")');
         $this->addSelect('type_id','(SELECT "CASH") UNION (SELECT "CREDIT") UNION (SELECT "CUSTOM")  UNION (SELECT "CLOSE")'); 

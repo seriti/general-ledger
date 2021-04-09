@@ -3,6 +3,7 @@ namespace App\Ledger;
 
 use Psr\Container\ContainerInterface;
 
+use App\Ledger\BankImport;
 use App\Ledger\ImportBankWizard;
 
 use Seriti\Tools\Template;

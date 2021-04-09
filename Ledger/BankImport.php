@@ -16,6 +16,8 @@ use App\Ledger\Helpers;
 use App\Ledger\COMPANY_ID;
 use App\Ledger\TABLE_PREFIX;
 
+//https://en.wikipedia.org/wiki/Debits_and_credits
+
 class BankImport extends Import {
 
     protected $acc_keywords = [];
@@ -141,6 +143,12 @@ class BankImport extends Import {
                      '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
                'ORDER BY type_id,name ';
         $this->acc_types = $this->db->readSqlList($sql); 
+
+        $sql = 'SELECT account_id,abbreviation FROM '.TABLE_PREFIX.'account '.
+               'WHERE company_id = "'.COMPANY_ID.'" AND '.
+                     '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
+               'ORDER BY type_id,name ';
+        $this->acc_codes = $this->db->readSqlList($sql); 
     } 
 
     public function useModifiedFile() 
@@ -150,7 +158,7 @@ class BankImport extends Import {
 
     public function modifyBankFile($import_type,&$message = '',&$error = '') 
     {
-        //internal representation
+        //internal transaction representation
         $header = ['Transact ID','Date','Description','Debit Credit','Amount','VAT Inclusive','Account'];
     
         //echo 'WTF file path: '.$this->file_path.'<br/>';
@@ -224,12 +232,11 @@ class BankImport extends Import {
                 
                 if($valid) { 
                     $v++; 
-                    $use_acc_id = '0';
+                    $use_acc_id = false;
                     $amount = abs($amount); //NB: amount is ALLWAYS postive in ledger transactions
                     
                     if($debit_credit === 'C') $use_acc_id = $def_acc_id_income; else $use_acc_id = $def_acc_id_expense;
                     
-
                     // Remove all non-word chars
                     $text = preg_replace('/[0-9]/','',$description);
                     $text = explode(' ',$text);
@@ -239,7 +246,7 @@ class BankImport extends Import {
                     $max_score = 0;
                     foreach($this->acc_keywords as $acc_id => $keywords) {
                         //initialise $use_acc_id in case of zero scores
-                        if($use_acc_id === '0') $use_acc_id = $acc_id;
+                        if($use_acc_id === false) $use_acc_id = $acc_id;
                         $score = 0;
                         foreach($text as $word) {
                             if(stripos($keywords,$word) !== false) $score++;
@@ -259,9 +266,7 @@ class BankImport extends Import {
                     if($vat_inclusive and $use_acc_id == $vat_acc_id) {
                         $use_acc_id = $def_acc_id_liability;
                     }  
-                    
-             
-                               
+                                                   
                     $line_mod = [];
                     $line_mod[] = '0';
                     $line_mod[] = $date_str;
@@ -277,12 +282,126 @@ class BankImport extends Import {
             }
         }   
         
+
+        if($import_type === 'GENERIC_EXPENSE' or $import_type === 'GENERIC_INCOME') {
+            $i=0;
+            $v=0;
+            while(($line = fgetcsv($handle_read,0,",")) !== FALSE) {
+                $error_tmp = '';
+                $error_line = '';
+
+                $i++;
+                $valid = false;
+                
+                /*
+                [0] - date YYYY-MM-DD
+                [1] - amount
+                [2] - description
+                [3] - account code
+                */
+
+                //need at least three csv values in line to be valid
+                if(count($line) > 2) {
+                    $date_str = Date::convertAnyDate($line[0],'YMD','YYYY-MM-DD',$error_tmp);
+                    if($error_tmp !== '') $error_line .= 'Invalid date['.$error_tmp.'] ';
+                    
+                    $amount = Calc::floatVal($line[1]);
+                    if($amount === 0) $error_line .= 'Zero amount ';
+
+                    $description = Secure::clean('string',$line[2]);
+                    
+                    if(isset($line[3])) {
+                        $account_code = Secure::clean('string',$line[3]);    
+                    } else {
+                        $account_code = '';
+                    }
+                    
+                    if($error_line !== '') {
+                        $error .=  $error_line.' in line['.$i.']. ';
+                    } else {
+                        $valid = true; 
+                    }
+                }  
+                                
+                if($valid) { 
+                    $v++; 
+                    $use_acc_id = false;
+
+                    //NB: $debit_credit refers to secondary/selected account $use_acc_id
+                    if($import_type === 'GENERIC_EXPENSE') {
+                        if($amount > 0.00) $debit_credit = 'D'; else $debit_credit = 'C'; //Debit = increase
+                        $def_acc_id = $def_acc_id_expense;
+                    }  
+                    if($import_type === 'GENERIC_INCOME') {
+                        if($amount > 0.00) $debit_credit = 'C'; else $debit_credit = 'D'; //Credit = increase
+                        $def_acc_id = $def_acc_id_income;
+                    }
+
+                    $amount = abs($amount); //NB: amount is ALLWAYS postive in ledger transactions
+
+                    if($account_code !== '') {
+                        //returns false if not found
+                        $use_acc_id = array_search($account_code,$this->acc_codes);
+                    }
+                    
+                    //only search on keywords if no recogniseable code given
+                    if($use_acc_id === false) {
+                        //Remove all non-word chars for keyword search
+                        $text = preg_replace('/[0-9]/','',$description);
+                        $text = explode(' ',$text);
+                        $text = array_map('trim',$text);
+                        
+                        //make guess at account id
+                        $max_score = 0;
+                        foreach($this->acc_keywords as $acc_id => $keywords) {
+                            //initialise $use_acc_id in case of zero scores
+                            if($use_acc_id === false) $use_acc_id = $acc_id;
+                            $score = 0;
+                            foreach($text as $word) {
+                                if(stripos($keywords,$word) !== false) $score++;
+                            } 
+                            if($score > $max_score) {
+                                $use_acc_id = $acc_id;
+                                $max_score = $score; 
+                            }  
+                        }    
+                    }
+                                        
+                    //INCOME secondary account cannot be an Expense account
+                    if($import_type === 'GENERIC_INCOME' and $this->acc_types[$use_acc_id][0] === 'E') {
+                        $use_acc_id = $def_acc_id;
+                    }
+                    //EXPENSE secondary account cannot be an Income or Liability account
+                    if($import_type === 'GENERIC_EXPENSE' and $this->acc_types[$use_acc_id][0] !== 'E') {
+                        $use_acc_id = $def_acc_id;
+                    }
+
+                    //cannot have a vat inclusive transaction with vat account as counterparty
+                    if($vat_inclusive and $use_acc_id == $vat_acc_id) {
+                        $use_acc_id = $def_acc_id;
+                    }  
+                             
+                               
+                    $line_mod = [];
+                    $line_mod[] = '0';
+                    $line_mod[] = $date_str;
+                    $line_mod[] = $description;
+                    $line_mod[] = $debit_credit;
+                    $line_mod[] = number_format($amount,2);
+                    $line_mod[] = $vat_inclusive;
+                    $line_mod[] = $use_acc_id;
+                    
+                    fputcsv($handle_write,$line_mod);
+    
+                }  
+            }
+        }
         //close bank file and converted/modified file
         fclose($handle_read);
         fclose($handle_write);
 
         //check if any valid lines found
-        if($v === 0) $error = 'No valid data found in bank import file. Check file is for bank you selected?';
+        if($v === 0) $error = 'No valid data found in transaction import file. Check file is for transaction format you selected?';
     }
     
 }

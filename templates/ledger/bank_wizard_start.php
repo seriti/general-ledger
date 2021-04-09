@@ -7,7 +7,9 @@ $list_param = ['class'=>'form-control'];
 $file_param = ['class'=>'btn btn-primary'];
 $check_param = ['class'=>'form-control'];
 
-$import_options = ['BANK_SBSA'=>'Standard Bank Current Account CSV dump',
+$import_options = ['GENERIC_EXPENSE'=>'Generic EXPENSE CSV file',
+                   'GENERIC_INCOME'=>'Generic INCOME CSV file',
+                   'BANK_SBSA'=>'Standard Bank Current Account CSV dump',
                    'BANK_SBSA_CC'=>'Standard Bank Credit Card CSV dump'];
 
 
@@ -50,7 +52,9 @@ $html .= '</div>'.
          '<div class="col-lg-6">';        
                         
 $html .= '<div class="row"><div class="col-lg-12">'.
-         '<p><b>NB1:</b> Your CSV text file must be correctly formatted to import correctly!</p>'.
+         '<p><b>NB1:</b> Your CSV text file must be correctly formatted to import correctly!<br/>'.
+            'Generic format: Date(YYYY-MM-DD),Amount(XXX.XX),Description,Account code(optional)<br/>'.
+            'Note that Comma Separated Values and not Semi-colon. Decimal separator is period(.) and enclosure is double quote(")</p>'.
          '<p><b>NB2:</b> All banks have different CSV structure. If your bank is not supported please contact us!</p>'.
          '<p><b>NB3:</b> You will be able to review all data and allocate to individual accounts after Upload.!</p>'.
          '</div></div>';       
