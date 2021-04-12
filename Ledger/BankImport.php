@@ -300,28 +300,38 @@ class BankImport extends Import {
                 [3] - account code
                 */
 
-                //need at least three csv values in line to be valid
-                if(count($line) > 2) {
-                    $date_str = Date::convertAnyDate($line[0],'YMD','YYYY-MM-DD',$error_tmp);
-                    if($error_tmp !== '') $error_line .= 'Invalid date['.$error_tmp.'] ';
-                    
-                    $amount = Calc::floatVal($line[1]);
-                    if($amount === 0) $error_line .= 'Zero amount ';
+                if($i === 1) {
+                   if(stripos($line[0],'date') === false) $error .= '"Date" header text in 1st column missing. ';
+                   if(stripos($line[1],'amount') === false) $error .= '"Amount" header text in 2nd column missing. ';
+                   if(stripos($line[2],'description') === false) $error .= '"Description" header text in 3rd column missing. ';
+                   if(isset($line[3]) and stripos($line[3],'code') === false) $error .= '"Code" header text in 4th column missing. ';
+                } else {
+                    //need at least three csv values in line to be valid
+                    if(count($line) > 2) {
+                        $date_str = Date::convertAnyDate($line[0],'YMD','YYYY-MM-DD',$error_tmp);
+                        if($error_tmp !== '') $error_line .= 'Invalid date['.$line[0].']:'.$error_tmp;
+                        
+                        $amount = Calc::floatVal($line[1]);
+                        if($amount === 0) $error_line .= 'Zero amount['.$line[1].'] ';
 
-                    $description = Secure::clean('string',$line[2]);
-                    
-                    if(isset($line[3])) {
-                        $account_code = Secure::clean('string',$line[3]);    
-                    } else {
-                        $account_code = '';
-                    }
-                    
-                    if($error_line !== '') {
-                        $error .=  $error_line.' in line['.$i.']. ';
-                    } else {
-                        $valid = true; 
-                    }
-                }  
+                        $description = Secure::clean('string',$line[2]);
+                        
+                        if(isset($line[3])) {
+                            $account_code = Secure::clean('string',$line[3]);    
+                        } else {
+                            $account_code = ''; 
+                        }
+                        
+                        if($error_line !== '') {
+                            $error .=  $error_line.' in line['.$i.']. ';
+                        } else {
+                            $valid = true; 
+                        }
+                    }   
+
+                }
+
+                
                                 
                 if($valid) { 
                     $v++; 
@@ -401,7 +411,7 @@ class BankImport extends Import {
         fclose($handle_write);
 
         //check if any valid lines found
-        if($v === 0) $error = 'No valid data found in transaction import file. Check file is for transaction format you selected?';
+        if($v === 0) $error .= 'No valid data found in transaction import file. Check file is for transaction format you selected?';
     }
     
 }

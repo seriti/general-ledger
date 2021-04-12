@@ -164,8 +164,19 @@ class ImportBankWizard extends Wizard
 
             $errors = $this->import->getErrors();
             if(count($errors) == 0) {
+                $this->db->executeSql('START TRANSACTION',$error_tmp);
+                if($error_tmp !== '') $this->addError('Could not START import transaction');
+
                 $this->import->importDataArray($import_data);
                 $errors = $this->import->getErrors();
+
+                if(count($errors)) {
+                    $this->db->executeSql('ROLLBACK',$error_tmp);
+                    if($error_tmp !== '') $this->addError('Could not ROLLBACK transaction');
+                } else {
+                    $this->db->executeSql('COMMIT',$error_tmp);
+                    if($error_tmp !== '') $this->addError('Could not COMMIT transaction');
+                }
             }
 
             $messages = $this->import->getMessages();
