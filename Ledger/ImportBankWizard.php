@@ -78,6 +78,10 @@ class ImportBankWizard extends Wizard
             //var_dump($this->form);
             //var_dump($this->container);
            // exit; 
+            if($import_type === 'GENERIC_EXPENSE' or $import_type === 'GENERIC_INCOME') {
+                $transact_type = 'CASH';
+                $ignore_desc = '';
+            }    
             
             if($import_type === 'BANK_SBSA') {
                 $transact_type = 'CASH';
