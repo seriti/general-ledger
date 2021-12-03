@@ -75,7 +75,7 @@ class Config
         if(!isset($user_data['company_id'])) {
             //first run on setup fails if table does not exist
             if($db->checkTableExists($table_company)) {
-                $sql = 'SELECT company_id FROM '.$table_company.' ORDER BY name LIMIT 1';
+                $sql = 'SELECT `company_id` FROM `'.$table_company.'` ORDER BY `name` LIMIT 1';
                 $company_id = $db->readSqlValue($sql,0);
                 if($company_id !== 0) {
                     $user_data['company_id'] = $company_id;
@@ -85,8 +85,8 @@ class Config
         }   
 
         if(isset($user_data['company_id'])) {
-            $sql = 'SELECT company_id,name,description,status FROM '.$table_company.' '.
-                   'WHERE company_id = "'.$user_data['company_id'].'" ';    
+            $sql = 'SELECT `company_id`,`name`,`description`,`status` FROM `'.$table_company.'` '.
+                   'WHERE `company_id` = "'.$user_data['company_id'].'" ';    
             $company = $db->readSqlRecord($sql);
             define('COMPANY_ID',$user_data['company_id']);
             define('COMPANY_NAME',$company['name']);

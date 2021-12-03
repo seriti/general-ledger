@@ -125,12 +125,12 @@ class SetupData extends SetupModuledata
 
            
         //initialisation
-        $this->addInitialSql('INSERT INTO `TABLE_PREFIXcompany` (name,date_start,vat_rate,status) '.
+        $this->addInitialSql('INSERT INTO `TABLE_PREFIXcompany` (`name`,`date_start`,`vat_rate`,`status`) '.
                              'VALUES("My first company",CURDATE(),"15","OK")');
         
 
         //updates use time stamp in ['YYYY-MM-DD HH:MM'] format, must be unique and sequential
-        $this->addUpdateSql('2020-06-19 12:00','ALTER TABLE TABLE_PREFIXaccount ADD COLUMN `chart_id` INT NOT NULL AFTER `account_id`');
+        $this->addUpdateSql('2020-06-19 12:00','ALTER TABLE`TABLE_PREFIXaccount` ADD COLUMN `chart_id` INT NOT NULL AFTER `account_id`');
     }
 }
 

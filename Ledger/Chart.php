@@ -33,7 +33,7 @@ class Chart extends Tree
 
     protected function beforeDelete($id,&$error) 
     {
-        $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'account WHERE chart_id = "'.$this->db->escapeSql($id).'" ';
+        $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'account` WHERE `chart_id` = "'.$this->db->escapeSql($id).'" ';
         $count = $this->db->readSqlValue($sql,0);
         if($count != 0) $error .= 'You cannot delete chart account as there are ['.$count.'] linked transactional accounts.';
     }

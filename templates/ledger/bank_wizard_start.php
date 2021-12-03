@@ -23,9 +23,9 @@ $html .= '<div class="row"><div class="col-lg-12">'.
          Form::arrayList($import_options,'import_type',$form['import_type'],true,$list_param).
          '</div></div>';
 
-$sql = 'SELECT account_id, CONCAT(type_id,":",name) FROM '.TABLE_PREFIX.'account '.
-       'WHERE company_id = "'.COMPANY_ID.'" AND '.
-            '(type_id = "ASSET_CURRENT_BANK" OR type_id = "LIABILITY_CURRENT_CARD") '.
+$sql = 'SELECT `account_id`, CONCAT(`type_id`,":",`name`) FROM `'.TABLE_PREFIX.'account` '.
+       'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+            '(`type_id` = "ASSET_CURRENT_BANK" OR `type_id` = "LIABILITY_CURRENT_CARD") '.
        'ORDER BY type_id,name ';
 
 $html .= '<div class="row"><div class="col-lg-12">'.

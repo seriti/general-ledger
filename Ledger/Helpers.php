@@ -35,9 +35,9 @@ class Helpers {
                 
         //finally update period status
         if($error === '') {
-            $sql = 'UPDATE '.TABLE_PREFIX.'period SET status = "OPEN" '.
-                     'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
-                           'period_id = "'.$db->escapeSql($period_id).'" ';
+            $sql = 'UPDATE `'.TABLE_PREFIX.'period` SET `status` = "OPEN" '.
+                     'WHERE `company_id` = "'.$db->escapeSql($company_id).'" AND '.
+                           '`period_id` = "'.$db->escapeSql($period_id).'" ';
             $db->executeSql($sql,$error_tmp);
             if($error_tmp !== '') $error .= 'Could not OPEN period: '.$error_tmp;
         }  
@@ -97,10 +97,10 @@ class Helpers {
             $debit_accounts = [];
             $credit_accounts = [];
             
-            $sql = 'SELECT B.account_id,B.account_balance '.
-                   'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
-                   'WHERE B.period_id = "'.$db->escapeSql($period_id).'"  AND '.
-                         'A.type_id LIKE "INCOME%" AND B.account_balance <> 0 ';
+            $sql = 'SELECT B.`account_id`,B.`account_balance` '.
+                   'FROM `'.TABLE_PREFIX.'balance` AS B JOIN `'.TABLE_PREFIX.'account` AS A ON(B.`account_id` = A.`account_id`) '.
+                   'WHERE B.`period_id` = "'.$db->escapeSql($period_id).'"  AND '.
+                         'A.`type_id` LIKE "INCOME%" AND B.`account_balance` <> 0 ';
             $balance_close = $db->readSqlList($sql);  
             if($balance_close != 0) {
                 $close_total = 0;
@@ -149,10 +149,10 @@ class Helpers {
             $debit_accounts = [];
             $credit_accounts = [];
             
-            $sql = 'SELECT B.account_id,B.account_balance '.
-                   'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
-                   'WHERE B.period_id = "'.$db->escapeSql($period_id).'"  AND '.
-                         'A.type_id LIKE "EXPENSE%" AND B.account_balance <> 0 ';
+            $sql = 'SELECT B.`account_id`,B.`account_balance` '.
+                   'FROM `'.TABLE_PREFIX.'balance` AS B JOIN `'.TABLE_PREFIX.'account` AS A ON(B.`account_id` = A.`account_id`) '.
+                   'WHERE B.`period_id` = "'.$db->escapeSql($period_id).'"  AND '.
+                         'A.`type_id` LIKE "EXPENSE%" AND B.`account_balance` <> 0 ';
             $balance_close = $db->readSqlList($sql);  
             if($balance_close != 0) {
                 $close_total = 0;
@@ -198,8 +198,8 @@ class Helpers {
         
         //finally update period status
         if($error === '') {
-            $sql = 'UPDATE '.TABLE_PREFIX.'period SET status = "CLOSED" '.
-                   'WHERE period_id = "'.$db->escapeSql($period_id).'" ';
+            $sql = 'UPDATE `'.TABLE_PREFIX.'period` SET `status` = "CLOSED" '.
+                   'WHERE `period_id` = "'.$db->escapeSql($period_id).'" ';
             $db->executeSql($sql,$error_tmp);
             if($error_tmp !== '') $error .= 'Could not OPEN period['.$period_id.']';
         }  
@@ -215,8 +215,8 @@ class Helpers {
         $company_id = $db->escapeSql($company_id);
         
         //get period record
-        $sql = 'SELECT period_id,name,date_start,date_end,period_id_previous,company_id,status '.
-               'FROM '.TABLE_PREFIX.'period WHERE period_id = "'.$period_id.'" ';
+        $sql = 'SELECT `period_id`,`name`,`date_start`,`date_end`,`period_id_previous`,`company_id`,`status` '.
+               'FROM `'.TABLE_PREFIX.'period` WHERE `period_id` = "'.$period_id.'" ';
         $period = $db->readSqlRecord($sql); 
         if($period == 0) $error .= 'INVALID balance period ID['.$period_id.']<br/>';
         
@@ -229,10 +229,10 @@ class Helpers {
         
         //get all accounts including hidden ones just in case there are lurking transactions/balances somewhere
         if($error === '') {  
-            $sql = 'SELECT account_id,name,type_id,description '.
-                   'FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$company_id.'" '.
-                   'ORDER BY type_id ';  
+            $sql = 'SELECT `account_id`,`name`,`type_id`,`description` '.
+                   'FROM `'.TABLE_PREFIX.'account` '.
+                   'WHERE `company_id` = "'.$company_id.'" '.
+                   'ORDER BY `type_id` ';  
             $accounts = $db->readSqlArray($sql);   
             if($accounts == 0) $error .= 'NO accounts exist for Company['.$company_id.']!<br/>';   
         } 
@@ -240,8 +240,8 @@ class Helpers {
         //get opening balances
         if($error === '') {
             if($period['period_id_previous'] != 0) {
-                $sql = 'SELECT account_id,account_balance FROM '.TABLE_PREFIX.'balance '.
-                       'WHERE period_id = "'.$period['period_id_previous'].'" ';
+                $sql = 'SELECT `account_id`,`account_balance` FROM `'.TABLE_PREFIX.'balance` '.
+                       'WHERE `period_id` = "'.$period['period_id_previous'].'" ';
                 $balance_open = $db->readSqlList($sql);  
                 if($balance_open == 0) {
                     $error .= 'Previous Period ID['.$period['period_id_previous'].'] has NO balances!';   
@@ -260,10 +260,10 @@ class Helpers {
                 $debit_total = 0;
                 $credit_total = 0;
                 
-                $sql = 'SELECT debit_credit,SUM(amount) FROM '.TABLE_PREFIX.'entry '.
-                       'WHERE account_id = "'.$account_id.'" AND '.
-                             'date >= "'.$period['date_start'].'" AND date <= "'.$period['date_end'].'" '.
-                       'GROUP BY debit_credit ';
+                $sql = 'SELECT `debit_credit`,SUM(`amount`) FROM `'.TABLE_PREFIX.'entry` '.
+                       'WHERE `account_id` = "'.$account_id.'" AND '.
+                             '`date` >= "'.$period['date_start'].'" AND `date` <= "'.$period['date_end'].'" '.
+                       'GROUP BY `debit_credit` ';
                 $entry = $db->readSqlList($sql); 
                 if($entry != 0) {
                     if(isset($entry['D'])) $debit_total = $entry['D'];
@@ -292,13 +292,13 @@ class Helpers {
         //save balances to db
         if($error === '') {
             //remove all old balance records
-            $sql = 'DELETE FROM '.TABLE_PREFIX.'balance '.
-                   'WHERE period_id = "'.$period_id.'" ';
+            $sql = 'DELETE FROM `'.TABLE_PREFIX.'balance` '.
+                   'WHERE `period_id` = "'.$period_id.'" ';
             $db->executeSql($sql,$error_tmp);
             if($error_tmp !== '') $error .= 'Could NOT delete closing balances for period['.$period_id.']';
             //create new records
             foreach($balance_close as $account_id => $balance) {
-                $sql = 'INSERT INTO '.TABLE_PREFIX.'balance (period_id,account_id,account_balance ) '.
+                $sql = 'INSERT INTO `'.TABLE_PREFIX.'balance` (`period_id`,`account_id`,`account_balance` ) '.
                        'VALUES("'.$period_id.'","'.$account_id.'","'.$balance.'")';
                 $db->executeSql($sql,$error_tmp);
                 if($error_tmp !== '') $error .= 'Could NOT insert closing balances for account['.$account_id.']';
@@ -307,8 +307,8 @@ class Helpers {
         
         //save balance time stamp to Company
         if($error === '') {
-            $sql = 'UPDATE '.TABLE_PREFIX.'company SET calc_timestamp = NOW() '.
-                     'WHERE company_id = "'.$company_id.'" ';
+            $sql = 'UPDATE `'.TABLE_PREFIX.'company` SET `calc_timestamp` = NOW() '.
+                   'WHERE `company_id` = "'.$company_id.'" ';
             $db->executeSql($sql,$error_tmp);
             if($error_tmp !== '') $error .= 'Could NOT update company timestamp!';     
         }  
@@ -321,8 +321,8 @@ class Helpers {
         $error_tmp = '';
         
         
-        $sql = 'SELECT name,status,date_start,date_end,company_id '.
-               'FROM '.TABLE_PREFIX.'period WHERE period_id = "'.$db->escapeSql($period_id).'" ';
+        $sql = 'SELECT `name`,`status`,`date_start`,`date_end`,`company_id` '.
+               'FROM `'.TABLE_PREFIX.'period` WHERE `period_id` = "'.$db->escapeSql($period_id).'" ';
         $period = $db->readSqlRecord($sql);
         if($period == 0) {
             $error .= 'INVALID period['.$period_id.']';
@@ -333,10 +333,10 @@ class Helpers {
         if($report === 'BALANCE') {
             //check if any transactions processed since last calculateBalances()
             /* disabled as calc_timestamp needs to be moved to gl_period table
-            $sql_company='(SELECT calc_timestamp FROM '.TABLE_PREFIX.'company '.
-                                        'WHERE company_id = "'.$db->escapeSql($company_id).'")';
-            $sql_transact='(SELECT MAX(date_process) FROM '.TABLE_PREFIX.'transact '.
-                                         'WHERE company_id = "'.$db->escapeSql($company_id).'")';
+            $sql_company='(SELECT `calc_timestamp` FROM `'.TABLE_PREFIX.'company` '.
+                                        'WHERE `company_id` = "'.$db->escapeSql($company_id).'")';
+            $sql_transact='(SELECT MAX(`date_process`) FROM `'.TABLE_PREFIX.'transact` '.
+                                         'WHERE `company_id` = "'.$db->escapeSql($company_id).'")';
             //returns transact timestamp - balance calc timestamp
             $sql = 'SELECT TIMESTAMPDIFF(SECOND,'.$sql_company.','.$sql_transact.')';
             $seconds=$db->readSqlValue($sql);
@@ -517,16 +517,16 @@ class Helpers {
         $output = [];
              
         //get period balances assuming already calculated
-        $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description,C.id AS chart_id,C.type_id AS chart_type_id '.
-               'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
-                     'JOIN '.TABLE_PREFIX.'chart AS C ON(A.chart_id = C.id)'.
-               'WHERE B.period_id = "'.$db->escapeSql($period_id).'" '.
-               'ORDER BY A.type_id ';
+        $sql = 'SELECT B.`account_id`,B.`account_balance`,A.`type_id`,A.`name`,A.`description`,C.`id` AS `chart_id`,C.`type_id` AS `chart_type_id` '.
+               'FROM `'.TABLE_PREFIX.'balance` AS B JOIN `'.TABLE_PREFIX.'account` AS A ON(B.`account_id` = A.`account_id`) '.
+                     'JOIN `'.TABLE_PREFIX.'chart` AS C ON(A.`chart_id` = C.`id`)'.
+               'WHERE B.`period_id` = "'.$db->escapeSql($period_id).'" '.
+               'ORDER BY A.`type_id` ';
         $balances = $db->readSqlArray($sql);  
         if($balances == 0) $error .= 'NO balances found for period!'; 
 
-        $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
-               'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
+        $sql = 'SELECT `id` AS `chart_id`,`id_parent`,`type_id`,`title`,`level`,`lineage`,`rank`,`rank_end` '.
+               'FROM `'.TABLE_PREFIX.'chart` ORDER BY `rank` ';
         $chart_tree = $db->readSqlArray($sql);
         if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
      
@@ -596,10 +596,10 @@ class Helpers {
         $output = [];
         
         //get period balances
-        $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description '.
-               'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
-               'WHERE B.period_id = "'.$db->escapeSql($period_id).'" '.
-               'ORDER BY A.type_id ';
+        $sql = 'SELECT B.`account_id`,B.`account_balance`,A.`type_id`,A.`name`,A.`description` '.
+               'FROM `'.TABLE_PREFIX.'balance` AS B JOIN `'.TABLE_PREFIX.'account` AS A ON(B.`account_id` = A.`account_id`) '.
+               'WHERE B.`period_id` = "'.$db->escapeSql($period_id).'" '.
+               'ORDER BY A.`type_id` ';
         $balances = $db->readSqlArray($sql);  
         if($balances == 0) $error .= 'NO balances found for period!'; 
 
@@ -799,179 +799,6 @@ class Helpers {
 
         if($error !== '') return false;
         
-        //get period balances
-        /*
-        if($error === '') {
-            $sql = 'SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description '.
-                   'FROM '.TABLE_PREFIX.'balance AS B JOIN '.TABLE_PREFIX.'account AS A ON(B.account_id = A.account_id) '.
-                   'WHERE B.period_id = "'.$db->escapeSql($period_id).'" '.
-                   'ORDER BY A.type_id ';
-            $balances = $db->readSqlArray($sql);  
-            if($balances == 0) $error .= 'NO balances found for period['.$period['name'].']!';   
-        } 
-        
-        //generate balance sheet
-        if($error === '') {
-            $data = [];
-            $income = 0.00;
-            $expenses = 0.00;
-            $open_pl = 0.00;
-            
-            //setup empty balance sheet account arrays
-            foreach(ACC_TYPE as $type_id=>$name) {
-                if(substr($type_id,0,6) !== 'INCOME' and substr($type_id,0,7) !== 'EXPENSE') { 
-                    $data[$type_id] = []; 
-                }  
-            }  
-                        
-            //organise balances into type_id arrays
-            foreach($balances as $account_id=>$balance) {
-                $data[$balance['type_id']][$account_id] = $balance;
-                
-                //NB: should be zero if period CLOSED
-                if(substr($balance['type_id'],0,6) === 'INCOME') $income+=floatval($balance['account_balance']);
-                if(substr($balance['type_id'],0,7) === 'EXPENSE') $expenses+=floatval($balance['account_balance']);
-            } 
-            $open_pl = $income-$expenses;
-            
-            //prepare account arrays for html or pdf      
-            $total_asset = 0.00;
-            $assets = [];
-            $r = 0;
-            $assets[0][$r] = 'ASSETS:';
-            $assets[1][$r] = '';
-            //get all asset balances
-            foreach($data as $type_id=>$data_arr) {
-                if((substr($type_id,0,5) === 'ASSET') and count($data_arr)) {
-                    $rt = 0;
-                    $total = 0;
-                    foreach($data_arr as $account_id=>$balance) {
-                        $r++;
-                        $rt++;
-                        $assets[0][$r] = $balance['name'];
-                        $assets[1][$r] = $balance['account_balance'];
-                        $total+=floatval($balance['account_balance']);
-                    } 
-                    $total_asset+=$total;
-                    if($rt > 1) {
-                        $r++;
-                        $assets[0][$r] = 'CUSTOM_ROW';
-                        $assets[1][$r] = 'BLANK';
-                        $r++;
-                        $assets[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
-                        $assets[1][$r] = $total;
-                    }  
-                } 
-            }
-            //show total assets
-            if($total_asset != 0) {
-                $r++;
-                $assets[0][$r] = 'CUSTOM_ROW';
-                $assets[1][$r] = 'BLANK';
-                $r++;
-                $assets[0][$r] = 'Total ASSETS:';
-                $assets[1][$r] = $total_asset; 
-            } else {
-                $assets[1][$r] = 'No asset balances'; 
-            }   
-            
-            
-            $total_liability = 0.00;
-            $liability = [];
-            $r = 0;
-            $liability[0][$r] = 'LIABILITIES:';
-            $liability[1][$r] = '';
-            //get all liability balances
-            foreach($data as $type_id=>$data_arr) {
-                if((substr($type_id,0,9) === 'LIABILITY') and count($data_arr)) {
-                    $rt = 0;
-                    $total = 0;
-                    foreach($data_arr as $account_id=>$balance) {
-                        $r++;
-                        $rt++;
-                        $liability[0][$r] = $balance['name'];
-                        $liability[1][$r] = $balance['account_balance'];
-                        $total+=floatval($balance['account_balance']);
-                    } 
-                    $total_liability+=$total;
-                    if($rt > 1) {
-                        $r++;
-                        $liability[0][$r] = 'CUSTOM_ROW';
-                        $liability[1][$r] = 'BLANK';
-                        $r++;
-                        $liability[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
-                        $liability[1][$r] = $total;
-                    }  
-                } 
-            }
-            //show total liabilities
-            if($total_liability!=0) {
-                $r++;
-                $liability[0][$r] = 'CUSTOM_ROW';
-                $liability[1][$r] = 'BLANK';
-                $r++;
-                $liability[0][$r] = 'Total LIABILITIES:';
-                $liability[1][$r] = $total_liability; 
-            } else {
-                $liability[1][$r] = 'No liability balances'; 
-            }
-            
-            $total_equity = 0.00;
-            $equity = [];
-            $r = 0;
-            $equity[0][$r] = 'EQUITY:';
-            $equity[1][$r] = '';
-            //get all asset balances
-            foreach($data as $type_id=>$data_arr) {
-                if((substr($type_id,0,6) === 'EQUITY') and count($data_arr)) {
-                    $rt = 0;
-                    $total = 0;
-                    foreach($data_arr as $account_id=>$balance) {
-                        $r++;
-                        $rt++;
-                        $equity[0][$r] = $balance['name'];
-                        $equity[1][$r] = $balance['account_balance'];
-                        $total+=floatval($balance['account_balance']);
-                    } 
-                    $total_equity+=$total;
-                    if($rt > 1) {
-                        $r++;
-                        $equity[0][$r] = 'CUSTOM_ROW';
-                        $equity[1][$r] = 'BLANK';
-                        $r++;
-                        $equity[0][$r] = 'Total '.ACC_TYPE[$type_id].':';
-                        $equity[1][$r] = $total;
-                    } 
-                     
-                } 
-            }
-            
-            //insert any current PL for non closed periods
-            if($open_pl != 0.00) {
-                $r++;
-                $equity[0][$r] = 'CUSTOM_ROW';
-                $equity[1][$r] = 'BLANK';
-                $r++;
-                $equity[0][$r] = 'OPEN P&L(Income-Expenses)';
-                $equity[1][$r] = $open_pl;
-                $total_equity+=$open_pl;
-            }
-            
-            //show total assets
-            if($total_equity != 0) {
-                $r++;
-                $equity[0][$r] = 'CUSTOM_ROW';
-                $equity[1][$r] = 'BLANK';
-                $r++;
-                $equity[0][$r] = 'Total EQUITY:';
-                $equity[1][$r] = $total_equity; 
-            } else {
-                $equity[1][$r] = 'No equity balances'; 
-            } 
-        }     
-        */
-
-
         $assets = $balances['assets'];
         $total_asset = $balances['total_asset'];
         $liability = $balances['liability'];
@@ -1111,10 +938,10 @@ class Helpers {
         if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
 
         //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
-        $sql = 'SELECT account_id,name,type_id,description '.
-               'FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
-                    '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%") ';
+        $sql = 'SELECT `account_id`,`name`,`type_id`,`description` '.
+               'FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" AND '.
+                    '(`type_id` LIKE "INCOME%" OR `type_id` LIKE "EXPENSE%") ';
         $accounts = $db->readSqlArray($sql);   
         if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
         
@@ -1128,11 +955,11 @@ class Helpers {
             $debit_total = 0;
             $credit_total = 0;
             
-            $sql = 'SELECT E.debit_credit,SUM(E.amount) '.
-                   'FROM '.TABLE_PREFIX.'entry AS E JOIN '.TABLE_PREFIX.'transact AS T ON(E.transact_id = T.transact_id) '.
-                   'WHERE E.account_id = "'.$account_id.'" AND T.type_id <> "CLOSE" AND '.
-                         'E.date >= "'.$period['date_start'].'" AND E.date <= "'.$period['date_end'].'" '.
-                   'GROUP BY E.debit_credit ';
+            $sql = 'SELECT E.`debit_credit`,SUM(E.`amount`) '.
+                   'FROM `'.TABLE_PREFIX.'entry` AS E JOIN `'.TABLE_PREFIX.'transact` AS T ON(E.`transact_id` = T.`transact_id`) '.
+                   'WHERE E.`account_id` = "'.$account_id.'" AND T.`type_id` <> "CLOSE" AND '.
+                         'E.`date` >= "'.$period['date_start'].'" AND E.`date` <= "'.$period['date_end'].'" '.
+                   'GROUP BY E.`debit_credit` ';
             $entry = $db->readSqlList($sql); 
             if($entry != 0) {
                 if(isset($entry['D'])) $debit_total = $entry['D'];
@@ -1215,11 +1042,11 @@ class Helpers {
         if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
 
         //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
-        $sql = 'SELECT A.account_id,A.name,A.type_id,A.description,C.id AS chart_id,C.type_id AS chart_type_id '.
-               'FROM '.TABLE_PREFIX.'account AS A '.
-               'JOIN '.TABLE_PREFIX.'chart AS C ON(A.chart_id = C.id)'.
-               'WHERE A.company_id = "'.$db->escapeSql($company_id).'" AND '.
-                    '(A.type_id LIKE "INCOME%" OR A.type_id LIKE "EXPENSE%") ';
+        $sql = 'SELECT A.`account_id`,A.`name`,A.`type_id`,A.`description`,C.`id` AS `chart_id`,C.`type_id` AS `chart_type_id` '.
+               'FROM `'.TABLE_PREFIX.'account` AS A '.
+               'JOIN `'.TABLE_PREFIX.'chart` AS C ON(A.`chart_id` = C.`id`)'.
+               'WHERE A.`company_id` = "'.$db->escapeSql($company_id).'" AND '.
+                    '(A.`type_id` LIKE "INCOME%" OR A.`type_id` LIKE "EXPENSE%") ';
         $accounts = $db->readSqlArray($sql);   
         if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
         
@@ -1232,11 +1059,11 @@ class Helpers {
             $debit_total = 0;
             $credit_total = 0;
             
-            $sql = 'SELECT E.debit_credit,SUM(E.amount) '.
-                   'FROM '.TABLE_PREFIX.'entry AS E JOIN '.TABLE_PREFIX.'transact AS T ON(E.transact_id = T.transact_id) '.
-                   'WHERE E.account_id = "'.$account_id.'" AND T.type_id <> "CLOSE" AND '.
-                         'E.date >= "'.$period['date_start'].'" AND E.date <= "'.$period['date_end'].'" '.
-                   'GROUP BY E.debit_credit ';
+            $sql = 'SELECT E.`debit_credit`,SUM(E.`amount`) '.
+                   'FROM `'.TABLE_PREFIX.'entry` AS E JOIN `'.TABLE_PREFIX.'transact` AS T ON(E.`transact_id` = T.`transact_id`) '.
+                   'WHERE E.`account_id` = "'.$account_id.'" AND T.`type_id` <> "CLOSE" AND '.
+                         'E.`date` >= "'.$period['date_start'].'" AND E.`date` <= "'.$period['date_end'].'" '.
+                   'GROUP BY E.`debit_credit` ';
             $entry = $db->readSqlList($sql); 
             if($entry != 0) {
                 if(isset($entry['D'])) $debit_total = $entry['D'];
@@ -1257,8 +1084,8 @@ class Helpers {
         }
 
         //get entire chart tree
-        $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
-                   'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
+        $sql = 'SELECT `id` AS `chart_id`,`id_parent`,`type_id`,`title`,`level`,`lineage`,`rank`,`rank_end` '.
+               'FROM `'.TABLE_PREFIX.'chart` ORDER BY `rank` ';
         $chart_tree = $db->readSqlArray($sql);
         if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
      
@@ -1314,135 +1141,6 @@ class Helpers {
         
         if($error !== '') exit;
 
-
-
-        /*
-        //********************
-
-        
-        $period = self::setupReportPeriod($db,'INCOME',$company_id,$period_id,$error_tmp);
-        if($error_tmp !== '') $error .= 'Period ERROR: '.$error_tmp;
-
-        
-        //get all INCOME & EXPENSE accounts including hidden ones just in case there are lurking transactions somewhere
-        if($error === '') {  
-            $sql = 'SELECT account_id,name,type_id,description '.
-                   'FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
-                        '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%") ';
-            $accounts = $db->readSqlArray($sql);   
-            if($accounts == 0) $error .= 'NO income or expense accounts exist for Company['.$company_id.']!<br/>';   
-        } 
-        
-        //process entries and generate balances excluding CLOSE transactions if any for period
-        //NB cannot use balances as for a CLOSED period they will be zero
-        if($error === '') {
-            $balances = [];
-            
-            foreach($accounts as $account_id=>$account) {
-                $debit_total = 0;
-                $credit_total = 0;
-                
-                $sql = 'SELECT E.debit_credit,SUM(E.amount) '.
-                       'FROM '.TABLE_PREFIX.'entry AS E JOIN '.TABLE_PREFIX.'transact AS T ON(E.transact_id = T.transact_id) '.
-                       'WHERE E.account_id = "'.$account_id.'" AND T.type_id <> "CLOSE" AND '.
-                             'E.date >= "'.$period['date_start'].'" AND E.date <= "'.$period['date_end'].'" '.
-                       'GROUP BY E.debit_credit ';
-                $entry = $db->readSqlList($sql); 
-                if($entry != 0) {
-                    if(isset($entry['D'])) $debit_total = $entry['D'];
-                    if(isset($entry['C'])) $credit_total = $entry['C'];
-                }
-            
-                if(substr($account['type_id'],0,7) === 'EXPENSE') {
-                    //DEBIT balances
-                    $balances[$account_id] = $debit_total-$credit_total; 
-                } 
-                
-                if(substr($account['type_id'],0,6) === 'INCOME')  {
-                    //CREDIT balances
-                    $balances[$account_id] = $credit_total-$debit_total; 
-                }  
-            }
-            
-        }
-        
-        if(CHART_SETUP) {
-            $sql = 'SELECT id AS chart_id,id_parent,type_id,title,level,lineage,rank,rank_end '.
-                   'FROM '.TABLE_PREFIX.'chart ORDER BY rank ';
-            $chart_tree = $db->readSqlArray($sql);
-            if($chart_tree == 0) $error .= 'NO chart of accounts found!';    
-         
-            //setup empty balance sheet account arrays
-            $data = [];
-            foreach($chart_tree as $chart_id=>$chart) {
-                if($chart['type_id'] === 'INCOME' and $chart['type_id'] === 'EXPENSE') { 
-                    $data[$chart_id] = []; 
-                }  
-            }  
-
-
-            //SELECT B.account_id,B.account_balance,A.type_id,A.name,A.description,C.id AS chart_id,C.type_id AS chart_type_id
-            foreach($balances as $account_id=>$balance) {
-                $data[$balance['chart_id']][$account_id] = $balance;
-                
-            } 
-        }
-
-
-        if($error !== '') return false;
-
-        //generate income statement
-        $income = [];
-        $expense = [];
-        $total_income = 0.00;
-        $total_expense = 0.00;
-        $net_income = 0.00;
-        
-        //determine which account balances to show(ie exclude zero accounts for now)
-        $ri = 0;
-        $income[0][$ri] = 'INCOME:';
-        $income[1][$ri] = '';
-        $re = 0;
-        $expense[0][$re] = 'EXPENSE:';
-        $expense[1][$re] = '';
-        foreach($accounts as $account_id=>$account) {
-            if(substr($account['type_id'],0,6) === 'INCOME' and $balances[$account_id] != 0) {
-                $ri++;
-                $income[0][$ri] = $account['name'];
-                $income[1][$ri] = $balances[$account_id];
-                //$income[$account_id] = $balances[$account_id];
-                $total_income+=$balances[$account_id];
-            } 
-                 
-            if(substr($account['type_id'],0,7) === 'EXPENSE' and $balances[$account_id] != 0) {
-                $re++;
-                $expense[0][$re] = $account['name'];
-                $expense[1][$re] = $balances[$account_id];
-                //$expense[$account_id] = $balances[$account_id];
-                $total_expense+=$balances[$account_id];
-            } 
-        } 
-        
-        //add totals
-        $ri++;
-        $income[0][$ri] = 'CUSTOM_ROW';
-        $income[1][$ri] = 'BLANK';
-        $ri++;
-        $income[0][$ri] = 'TOTAL Income';
-        $income[1][$ri] = $total_income;
-        $re++;
-        $expense[0][$re] = 'CUSTOM_ROW';
-        $expense[1][$re] = 'BLANK';
-        $re++;
-        $expense[0][$re] = 'TOTAL Expense';
-        $expense[1][$re] = $total_expense;   
-
-    //********************
-        $net_income = $total_income-$total_expense;
-        */
-
-        
         $net_income = $data['total_income'] - $data['total_expense'];
         $income = $data['income'];
         $expense = $data['expense'];
@@ -1555,9 +1253,9 @@ class Helpers {
         
         $date = $db->escapeSql($date);
         
-        $sql = 'SELECT name,status,date_start,date_end FROM '.TABLE_PREFIX.'period '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" AND '.
-                     'date_start <= "'.$date.'" AND date_end >= "'.$date.'" LIMIT 1 ';
+        $sql = 'SELECT `name`,`status`,`date_start`,`date_end` FROM `'.TABLE_PREFIX.'period` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" AND '.
+                     '`date_start` <= "'.$date.'" AND `date_end` >= "'.$date.'" LIMIT 1 ';
         $period = $db->readSqlRecord($sql);           
         if($period == 0) {
             $error .= 'NO period exists for company['.$company_id.'] that includes date['.$date.']!';
@@ -1574,9 +1272,9 @@ class Helpers {
         $date_options['include_first'] = False;
         $output = [];
                 
-        $sql = 'SELECT period_id AS id,period_id,name,date_start,date_end,status,company_id,period_id_previous '.
-               'FROM '.TABLE_PREFIX.'period WHERE company_id = "'.$db->escapeSql($company_id).'" '.
-               'ORDER BY date_start ';
+        $sql = 'SELECT `period_id` AS `id`,`period_id`,`name`,`date_start`,`date_end`,`status`,`company_id`,`period_id_previous` '.
+               'FROM `'.TABLE_PREFIX.'period` WHERE `company_id` = "'.$db->escapeSql($company_id).'" '.
+               'ORDER BY `date_start` ';
         $periods = $db->readSqlArray($sql);
         if($periods != 0) {
             $p = 0;
@@ -1625,19 +1323,19 @@ class Helpers {
         $days = Date::daysInMonth($date_end);
         $date_end = $tax_year.'-02-'.$days;
     
-        $sql = 'SELECT MIN(date_start) AS first_date, MAX(date_end) AS last_date  '.
-               'FROM '.TABLE_PREFIX.'period '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" ';
+        $sql = 'SELECT MIN(`date_start`) AS `first_date`, MAX(`date_end`) AS `last_date`  '.
+               'FROM `'.TABLE_PREFIX.'period` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" ';
         $range = $db->readSqlRecord($sql);
 
         $period_id_previous = 0;
         $update_period_id = 0;
         $period_status = 'OPEN';
         if($range != 0){
-            $sql = 'SELECT period_id,status  '.
-                   'FROM '.TABLE_PREFIX.'period '.
-                   'WHERE company_id = "'.$db->escapeSql($company_id).'" '.
-                   'ORDER BY date_start ';
+            $sql = 'SELECT `period_id`,`status`  '.
+                   'FROM `'.TABLE_PREFIX.'period` '.
+                   'WHERE `company_id` = "'.$db->escapeSql($company_id).'" '.
+                   'ORDER BY `date_start` ';
             $periods = $db->readSqlList($sql);
             $period_keys = array_keys($periods);
 
@@ -1674,10 +1372,10 @@ class Helpers {
     }  
 
     public static function getCompany($db,$company_id) {
-        $sql = 'SELECT name,description,status,date_start,date_end,'.
-                      'vat_apply,vat_rate,vat_account_id,ret_account_id,calc_timestamp '.
-               'FROM '.TABLE_PREFIX.'company '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" ';
+        $sql = 'SELECT `name`,`description`,`status`,`date_start`,`date_end`,'.
+                      '`vat_apply`,`vat_rate`,`vat_account_id`,`ret_account_id`,`calc_timestamp` '.
+               'FROM `'.TABLE_PREFIX.'company` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" ';
         $company = $db->readSqlRecord($sql);
         if($company == 0) throw new Exception('LEDGER_HELPER_ERROR: INVALID Company ID['.$company_id.']');
         
@@ -1690,9 +1388,9 @@ class Helpers {
         $error = '';
         $message = '';
                         
-        $sql = 'DELETE FROM '.TABLE_PREFIX.'transact '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" AND status = "NEW" ';
-        if($type_id !== 'ALL') $sql .= 'AND type_id = "'.$db->escapeSql($type_id).'"  ';
+        $sql = 'DELETE FROM `'.TABLE_PREFIX.'transact` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" AND `status` = "NEW" ';
+        if($type_id !== 'ALL') $sql .= 'AND `type_id` = "'.$db->escapeSql($type_id).'"  ';
         $no = $db->executeSql($sql,$error_tmp);
         if($error_tmp !== '') $error .= 'Could not delete NEW transactions.';
                     
@@ -1718,11 +1416,11 @@ class Helpers {
                 
         $db->executeSql('START TRANSACTION',$error_tmp);
                 
-        $sql = 'SELECT transact_id,description,date,status '.
-               'FROM '.TABLE_PREFIX.'transact '.
-               'WHERE company_id = "'.$db->escapeSql($company_id).'" AND status = "NEW" ';
-        if($type_id !== 'ALL') $sql .= 'AND type_id = "'.$db->escapeSql($type_id).'"  ';
-        $sql .= 'ORDER BY date';
+        $sql = 'SELECT `transact_id`,`description`,`date`,`status` '.
+               'FROM `'.TABLE_PREFIX.'transact` '.
+               'WHERE `company_id` = "'.$db->escapeSql($company_id).'" AND `status` = "NEW" ';
+        if($type_id !== 'ALL') $sql .= 'AND `type_id` = "'.$db->escapeSql($type_id).'"  ';
+        $sql .= 'ORDER BY `date`';
         $transact = $db->readSqlArray($sql);
         if($transact != 0) {
             $message .= 'found '.count($transact).' of '.$type_id.' type transactions to process!';
@@ -1774,10 +1472,10 @@ class Helpers {
             if(!isset($options['vat_account_id'])) $error .= 'Transaction requires VAT account ID!<br/>';  
         }    
             
-        $sql = 'SELECT transact_id,type_id,status,date,debit_credit,account_id_primary,account_id, '.
-                      'amount,vat_inclusive,debit_accounts,credit_accounts '.
-               'FROM '.TABLE_PREFIX.'transact '.
-               'WHERE transact_id = "'.$db->escapeSql($transact_id).'" ';
+        $sql = 'SELECT `transact_id`,`type_id`,`status`,`date`,`debit_credit`,`account_id_primary`,`account_id`, '.
+                      '`amount`,`vat_inclusive`,`debit_accounts`,`credit_accounts` '.
+               'FROM `'.TABLE_PREFIX.'transact` '.
+               'WHERE `transact_id` = "'.$db->escapeSql($transact_id).'" ';
         $transact = $db->readSqlRecord($sql);
         if($transact == 0) {
             $error .= 'Transaction ID['.$transact_id.'] is INVALID!';
@@ -1852,8 +1550,8 @@ class Helpers {
             //need to check all transacted accounts are active and total debits = total credits
             //NB: also check that transaction type = EQUITY if any equity accounts involved
             if($valid) {
-                $sql = 'SELECT account_id,name,type_id FROM '.TABLE_PREFIX.'account '.
-                       'WHERE company_id = "'.$db->escapeSql($company_id).'" ';
+                $sql = 'SELECT `account_id`,`name`,`type_id` FROM `'.TABLE_PREFIX.'account` '.
+                       'WHERE `company_id` = "'.$db->escapeSql($company_id).'" ';
                 $accounts = $db->readSqlArray($sql);
                 
                 $total_debit = 0;
@@ -1886,7 +1584,7 @@ class Helpers {
             //process entries and transaction update
             if($valid) {      
                 //remove any entries that may exist for the transaction
-                $sql = 'DELETE FROM '.TABLE_PREFIX.'entry WHERE transact_id = "'.$transact_id.'" ';
+                $sql = 'DELETE FROM `'.TABLE_PREFIX.'entry` WHERE `transact_id` = "'.$transact_id.'" ';
                 $db->executeSql($sql,$error_tmp); 
                 if($error_tmp !== '') $error .= 'Could NOT delete entries for transaction['.$transact_id.'] :'.$error_tmp.'<br/>';
                 
@@ -1942,14 +1640,14 @@ class Helpers {
 
         $company_id = $db->escapeSql($company_id);
 
-        $sql = 'SELECT A.account_id,A.name,(SELECT COUNT(*) FROM '.TABLE_PREFIX.'entry AS E WHERE E.account_id = A.account_id) AS entry_count '.
-               'FROM '.TABLE_PREFIX.'account AS A WHERE A.company_id = "'.$company_id.'" ';
+        $sql = 'SELECT A.`account_id`,A.`name`,(SELECT COUNT(*) FROM `'.TABLE_PREFIX.'entry` AS E WHERE E.`account_id` = A.`account_id`) AS `entry_count` '.
+               'FROM `'.TABLE_PREFIX.'account` AS A WHERE A.`company_id` = "'.$company_id.'" ';
         $account_list = $db->readSqlArray($sql);
         if($account_list != 0) {
             foreach($account_list as $acc_id=>$account) {
                 if($account['entry_count'] == 0) {
                     if($acc_id != $company['vat_account_id'] and $acc_id != $company['ret_account_id']) {
-                        $sql = 'DELETE FROM '.TABLE_PREFIX.'account WHERE account_id = "'.$acc_id.'" ';
+                        $sql = 'DELETE FROM `'.TABLE_PREFIX.'account` WHERE `account_id` = "'.$acc_id.'" ';
                         $db->executeSql($sql,$error_tmp);
                         if($error_tmp === '') {
                             $accounts[] = $account;
@@ -1997,15 +1695,15 @@ class Helpers {
 
         if(CHART_SETUP) {
             //NB: readSqlList() will only return single result for each type_id, if more than one.
-            $sql = 'SELECT type_id,chart_id FROM '.TABLE_PREFIX.'account GROUP BY type_id,chart_id';
+            $sql = 'SELECT `type_id`,`chart_id` FROM `'.TABLE_PREFIX.'account` GROUP BY `type_id`,`chart_id`';
             $chart_list = $db->readSqlList($sql);
         }
                 
         
         $company_id = $db->escapeSql($company_id);
         
-        $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.$company_id.'" ';
+        $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.$company_id.'" ';
         $count = $db->readSqlValue($sql);
         
         if($count != 0) {
@@ -2013,13 +1711,13 @@ class Helpers {
                       'Can only setup default accounts where NO accounts exist for company!';  
         } else {
             if(CHART_SETUP and $chart_list != 0) {
-                $sql = 'INSERT INTO '.TABLE_PREFIX.'account (company_id,type_id,chart_id,name,abbreviation,status) VALUES ';
+                $sql = 'INSERT INTO `'.TABLE_PREFIX.'account` (`company_id`,`type_id`,`chart_id`,`name`,`abbreviation`,`status`) VALUES ';
                 foreach($acc_list as $acc) {
                     if(isset($chart_list[$acc[0]])) $chart_id = $chart_list[$acc[0]]; else $chart_id = '0';
                     $sql .= '("'.$company_id.'","'.$acc[0].'","'.$chart_id.'","'.$acc[1].'","'.$acc[2].'","OK"),';
                 } 
             } else {
-                $sql = 'INSERT INTO '.TABLE_PREFIX.'account (company_id,type_id,name,abbreviation,status) VALUES ';
+                $sql = 'INSERT INTO `'.TABLE_PREFIX.'account` (`company_id`,`type_id`,`name`,`abbreviation`,`status`) VALUES ';
                 foreach($acc_list as $acc) {
                     $sql .= '("'.$company_id.'","'.$acc[0].'","'.$acc[1].'","'.$acc[2].'","OK"),';
                 }    
@@ -2033,17 +1731,17 @@ class Helpers {
             } else {  
                 //add specialised accounts to company setup
                 if($error === '') {
-                    $sql = 'SELECT account_id FROM '.TABLE_PREFIX.'account '.
-                           'WHERE company_id = "'.$company_id.'" AND type_id = "LIABILITY_CURRENT" AND name LIKE "%VAT%" LIMIT 1 ';
+                    $sql = 'SELECT `account_id` FROM `'.TABLE_PREFIX.'account` '.
+                           'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "LIABILITY_CURRENT" AND `name` LIKE "%VAT%" LIMIT 1 ';
                     $vat_account_id = $db->readSqlValue($sql);
                     
-                    $sql = 'SELECT account_id FROM '.TABLE_PREFIX.'account '.
-                           'WHERE company_id = "'.$company_id.'" AND type_id = "EQUITY_EARNINGS" LIMIT 1 ';
+                    $sql = 'SELECT `account_id` FROM `'.TABLE_PREFIX.'account` '.
+                           'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "EQUITY_EARNINGS" LIMIT 1 ';
                     $ret_account_id = $db->readSqlValue($sql);
                      
-                    $sql = 'UPDATE '.TABLE_PREFIX.'company SET '.
-                           'vat_account_id = "'.$vat_account_id.'", ret_account_id = "'.$ret_account_id.'" '.
-                           'WHERE company_id = "'.$company_id.'" ';
+                    $sql = 'UPDATE `'.TABLE_PREFIX.'company` SET '.
+                           '`vat_account_id` = "'.$vat_account_id.'", `ret_account_id` = "'.$ret_account_id.'" '.
+                           'WHERE `company_id` = "'.$company_id.'" ';
                     $db->executeSql($sql,$error_tmp); 
                     if($error_tmp !== '') $error = 'Could NOT setup company VAT account!'; 
                 }
@@ -2056,31 +1754,31 @@ class Helpers {
     public static function checkCompanyAccounts($db,$company_id,&$error) {
         $company_id = $db->escapeSql($company_id);
         
-        $sql = 'SELECT name,vat_account_id,ret_account_id '.
-               'FROM '.TABLE_PREFIX.'company '.
-               'WHERE company_id = "'.$company_id.'" ';
+        $sql = 'SELECT `name`,`vat_account_id`,`ret_account_id` '.
+               'FROM `'.TABLE_PREFIX.'company` '.
+               'WHERE `company_id` = "'.$company_id.'" ';
         $company = $db->readSqlRecord($sql);
         if($company['vat_account_id'] == 0) $error .= 'Company vat account NOT setup!<br/>';
         if($company['ret_account_id'] == 0) $error .= 'Company retained income account  NOT setup!<br/>';
         
         if($company['vat_account_id'] != 0) {
-            $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$company_id.'" AND account_id = "'.$company['vat_account_id'].'" AND '.
-                         'type_id LIKE "LIABILITY_CURRENT%" AND status <> "HIDE" ';
+            $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'account` '.
+                   'WHERE `company_id` = "'.$company_id.'" AND `account_id` = "'.$company['vat_account_id'].'" AND '.
+                         '`type_id` LIKE "LIABILITY_CURRENT%" AND `status` <> "HIDE" ';
             $count = $db->readSqlValue($sql);
             if($count == 0) $error .= 'Company VAT account id['.$company['vat_account_id'].'] not a valid Current LIABILITY account!';
         }  
         
         if($company['ret_account_id'] != 0) {
-            $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$company_id.'" AND account_id = "'.$company['ret_account_id'].'" AND '.
-                         'type_id = "EQUITY_EARNINGS" AND status <> "HIDE" ';
+            $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'account` '.
+                   'WHERE `company_id` = "'.$company_id.'" AND `account_id` = "'.$company['ret_account_id'].'" AND '.
+                         '`type_id` = "EQUITY_EARNINGS" AND `status` <> "HIDE" ';
             $count = $db->readSqlValue($sql);
             if($count == 0) $error .= 'Company Retained Earnings account id['.$company['ret_account_id'].'] not a valid EQUITY account!';
         }  
                 
-        $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.$company_id.'" AND type_id = "ASSET_CURRENT_BANK" ';
+        $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "ASSET_CURRENT_BANK" ';
         $count = $db->readSqlValue($sql);
         if($count == 0) $error .= 'Company needs at least one ASSET account with type ASSET_CURRENT_BANK!';
          
@@ -2090,8 +1788,8 @@ class Helpers {
     public static function getAccount($db,$account_id,&$error) {
         $error = '';
         
-        $sql = 'SELECT * FROM '.TABLE_PREFIX.'account '.
-               'WHERE account_id = "'.$db->escapeSql($account_id).'" ';
+        $sql = 'SELECT * FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `account_id` = "'.$db->escapeSql($account_id).'" ';
         $account = $db->readSqlRecord($sql);
         if($account == 0) $error .= 'Invalid account ID['.$account_id.']';
         

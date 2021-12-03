@@ -101,7 +101,7 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT company_id,name FROM '.TABLE_PREFIX.'company ORDER BY name';
+                $sql = 'SELECT `company_id`,`name` FROM `'.TABLE_PREFIX.'company` ORDER BY `name`';
                 $list_param = [];
                 $list_param['class'] = 'form-control input-large';
             
@@ -136,7 +136,7 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT company_id,name FROM '.TABLE_PREFIX.'company ORDER BY name';
+                $sql = 'SELECT `company_id`,`name` FROM `'.TABLE_PREFIX.'company` ORDER BY `name`';
                 $list_param = [];
                 $list_param['class'] = 'form-control input-large';
             
@@ -167,7 +167,7 @@ class Task extends SeritiTask
                 header('location: '.$location);
                 exit;             
             } else {
-                $sql = 'SELECT company_id,name FROM '.TABLE_PREFIX.'company ORDER BY name';
+                $sql = 'SELECT `company_id`,`name` FROM `'.TABLE_PREFIX.'company` ORDER BY `name`';
                 $list_param = array();
                 $list_param['class'] = 'form-control input-large';
             
@@ -197,9 +197,9 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT period_id,CONCAT(name," (from: ",date_start," To: ",date_end,")") FROM '.TABLE_PREFIX.'period '.
-                       'WHERE company_id = "'.COMPANY_ID.'" AND status = "OPEN" '.
-                       'ORDER BY date_start';
+                $sql = 'SELECT `period_id`,CONCAT(`name`," (from: ",`date_start`," To: ",`date_end`,")") FROM `'.TABLE_PREFIX.'period` '.
+                       'WHERE `company_id` = "'.COMPANY_ID.'" AND `status` = "OPEN" '.
+                       'ORDER BY `date_start`';
                 $list_param = array();
                 $list_param['class'] = 'form-control input-large';
             
@@ -229,9 +229,9 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT period_id,CONCAT(name," (from: ",date_start," To: ",date_end,")") FROM '.TABLE_PREFIX.'period '.
-                       'WHERE company_id = "'.COMPANY_ID.'" AND status = "CLOSED" '.
-                       'ORDER BY date_start';
+                $sql = 'SELECT `period_id`,CONCAT(`name`," (from: ",`date_start`," To: ",`date_end`,")") FROM `'.TABLE_PREFIX.'period` '.
+                       'WHERE `company_id` = "'.COMPANY_ID.'" AND `status` = "CLOSED" '.
+                       'ORDER BY `date_start`';
                 $list_param = array();
                 $list_param['class'] = 'form-control input-large';
             
@@ -264,9 +264,9 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT period_id,CONCAT(name," (from: ",date_start," To: ",date_end,")") FROM '.    TABLE_PREFIX.'period '.
-                       'WHERE company_id = "'.COMPANY_ID.'" AND status = "CLOSED" '.
-                       'ORDER BY date_start';
+                $sql = 'SELECT `period_id`,CONCAT(`name`," (from: ",`date_start`," To: ",`date_end`,")") FROM `'.TABLE_PREFIX.'period` '.
+                       'WHERE `company_id` = "'.COMPANY_ID.'" AND `status` = "CLOSED" '.
+                       'ORDER BY `date_start`';
                 $list_param = array();
                 $list_param['class'] = 'form-control input-large';
             
@@ -296,9 +296,9 @@ class Task extends SeritiTask
                     $this->addError($error);   
                 }     
             } else {
-                $sql = 'SELECT period_id,CONCAT(name," (from: ",date_start," To: ",date_end,")") FROM '.TABLE_PREFIX.'period '.
-                       'WHERE company_id = "'.COMPANY_ID.'" AND status = "OPEN" '.
-                       'ORDER BY date_start';
+                $sql = 'SELECT `period_id`,CONCAT(`name`," (from: ",`date_start`," To: ",`date_end`,")") FROM `'.TABLE_PREFIX.'period` '.
+                       'WHERE `company_id` = "'.COMPANY_ID.'" AND `status` = "OPEN" '.
+                       'ORDER BY `date_start`';
                 $list_param = array();
                 $list_param['class'] = 'form-control input-large';
             

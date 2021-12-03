@@ -94,8 +94,8 @@ class ImportBankWizard extends Wizard
                 $ignore_desc = 'APO PAYMENT';
             }  
 
-            $sql = 'SELECT account_id,type_id,name,description FROM '.TABLE_PREFIX.'account '.
-                   'WHERE account_id = "'.$account_id_primary.'" ';
+            $sql = 'SELECT `account_id`,`type_id`,`name`,`description` FROM `'.TABLE_PREFIX.'account` '.
+                   'WHERE `account_id` = "'.$account_id_primary.'" ';
             $primary_account = $this->db->readSqlRecord($sql); 
             if($primary_account == 0) {
                 $error .= 'Invalid primary account ID['.$account_id_primary.']<br/>';

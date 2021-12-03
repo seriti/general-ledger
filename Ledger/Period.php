@@ -25,13 +25,14 @@ class Period extends Table
         $this->addTableCol(array('id'=>'date_start','type'=>'DATE','title'=>'Date START'));
         $this->addTableCol(array('id'=>'date_end','type'=>'DATE','title'=>'Date END'));
         $this->addTableCol(array('id'=>'status','type'=>'STRING','title'=>'Status'));
-        $this->addTableCol(array('id'=>'period_id_previous','type'=>'STRING','title'=>'Previous period','join'=>'name FROM '.$this->table.' WHERE period_id'));
+        $this->addTableCol(array('id'=>'period_id_previous','type'=>'STRING','title'=>'Previous period',
+                                 'join'=>'`name` FROM `'.$this->table.'` WHERE `period_id`'));
         //NB: changing period status is handled in system tasks
         $this->addTableCol(array('id'=>'status','type'=>'STRING','title'=>'Status','edit'=>false));
 
         $this->addSortOrder('T.date_start ','Start date','DEFAULT');
 
-        $this->addSql('WHERE','T.company_id = "'.COMPANY_ID.'"');
+        $this->addSql('WHERE','T.`company_id` = "'.COMPANY_ID.'"');
 
         $this->addAction(array('type'=>'edit','text'=>'edit'));
         $this->addAction(array('type'=>'delete','text'=>'delete','pos'=>'R'));
@@ -39,17 +40,19 @@ class Period extends Table
         $this->addSearch(array('name','date_start','status'),array('rows'=>2));
           
         $this->addSelect('status','(SELECT "OPEN") UNION (SELECT "CLOSED")');
-        $this->addSelect('period_id_previous',array('xtra'=>array(0=>'NONE'),'sql'=>'SELECT period_id,name FROM '.$this->table.' WHERE company_id = "'.COMPANY_ID.'" ORDER BY date_start'));
+        $this->addSelect('period_id_previous',
+                         ['xtra'=>[0=>'NONE'],
+                          'sql'=>'SELECT `period_id`,`name` FROM `'.$this->table.'` WHERE `company_id` = "'.COMPANY_ID.'" ORDER BY `date_start`']);
     }
 
     protected function beforeDelete($id,&$error_str) {
-        $sql = 'SELECT * FROM '.$this->table.' '.
-               'WHERE period_id = "'.$this->db->escapeSql($id).'" ';
+        $sql = 'SELECT * FROM `'.$this->table.'` '.
+               'WHERE `period_id` = "'.$this->db->escapeSql($id).'" ';
         $period = $this->db->readSqlRecord($sql); 
          
-        $sql = 'SELECT COUNT(*) FROM '.TABLE_PREFIX.'transact '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND '.
-                     'date >= "'.$period['date_start'].'" AND date <= "'.$period['date_end'].'" ';
+        $sql = 'SELECT COUNT(*) FROM `'.TABLE_PREFIX.'transact` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+                     '`date` >= "'.$period['date_start'].'" AND `date` <= "'.$period['date_end'].'" ';
                    
         $count = $this->db->readSqlValue($sql,0); 
         if($count != 0) $error_str .= 'You cannot delete as there are '.$count.' transactions within period dates!';
@@ -66,8 +69,8 @@ class Period extends Table
         
         //check period consecutive after previous
         if($form['period_id_previous'] != 0) {
-            $sql = 'SELECT * FROM '.$this->table.' '.
-                   'WHERE period_id = "'.$this->db->escapeSql($form['period_id_previous']).'" ';
+            $sql = 'SELECT * FROM `'.$this->table.'` '.
+                   'WHERE `period_id` = "'.$this->db->escapeSql($form['period_id_previous']).'" ';
             $prev = $this->db->readSqlRecord($sql);
             if($prev == 0) {
                 $error_str .= 'Previous period ID['.$form['period_id_previous'].'] is INVALID!';
@@ -86,8 +89,8 @@ class Period extends Table
         $error_str = '';
         
         if($edit_type === 'INSERT') {
-            $sql='UPDATE '.$this->table.' SET company_id = "'.COMPANY_ID.'", status = "OPEN" '.
-                 'WHERE period_id = "'.$this->db->escapeSql($id).'"';
+            $sql='UPDATE `'.$this->table.'` SET `company_id` = "'.COMPANY_ID.'", `status` = "OPEN" '.
+                 'WHERE `period_id` = "'.$this->db->escapeSql($id).'"';
             $this->db->executeSql($sql,$error_str);
         }  
             

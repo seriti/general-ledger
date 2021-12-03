@@ -29,9 +29,9 @@ class Report extends ReportTool
         if($id === 'select_period') {
             $param = [];
             $param['class'] = 'form-control input-medium';
-            $sql = 'SELECT period_id,name FROM '.TABLE_PREFIX.'period '.
-                   'WHERE company_id = "'.COMPANY_ID.'" '.
-                   'ORDER BY date_start '; 
+            $sql = 'SELECT `period_id`,`name` FROM `'.TABLE_PREFIX.'period` '.
+                   'WHERE `company_id` = "'.COMPANY_ID.'" '.
+                   'ORDER BY `date_start` '; 
             if(isset($form['period_id'])) $period_id = $form['period_id']; else $period_id = '';
             $html .= Form::sqlList($sql,$this->db,'period_id',$period_id,$param);
         }

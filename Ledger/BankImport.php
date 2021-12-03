@@ -67,8 +67,8 @@ class BankImport extends Import {
             if($keywords_new != '') {
                 $keywords = trim($this->acc_keywords[$row['account_id']].' '.$keywords_new);
                 $this->acc_keywords[$row['account_id']] = $keywords;
-                $sql = 'UPDATE '.TABLE_PREFIX.'account SET keywords = "'.$this->db->escapeSql($keywords).'" '.
-                       'WHERE account_id = "'.$this->db->escapeSql($row['account_id']).'" ';
+                $sql = 'UPDATE `'.TABLE_PREFIX.'account` SET `keywords` = "'.$this->db->escapeSql($keywords).'" '.
+                       'WHERE `account_id` = "'.$this->db->escapeSql($row['account_id']).'" ';
                 $this->db->executeSql($sql,$error);      
             }  
         }  
@@ -120,11 +120,11 @@ class BankImport extends Import {
         $this->addImportCol(array('id'=>'vat_inclusive','type'=>'BOOLEAN','title'=>'VAT Inclusive','confirm'=>true,'class'=>'none'));
         $this->addImportCol(array('id'=>'account_id','type'=>'INTEGER','title'=>'Account','confirm'=>true,));
              
-        $sql = 'SELECT account_id,CONCAT(type_id,":",name) AS name '.
-               'FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND '.
-                     '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
-               'ORDER BY type_id, name';
+        $sql = 'SELECT `account_id`,CONCAT(`type_id`,":",`name`) AS `name` '.
+               'FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+                     '(`type_id` LIKE "INCOME%" OR `type_id` LIKE "EXPENSE%" OR `type_id` LIKE "LIABILITY%") '.
+               'ORDER BY `type_id`, `name`';
         $this->addSelect('account_id',$sql);
       
 
@@ -132,21 +132,21 @@ class BankImport extends Import {
         $this->word_ignore = ['THE','CREDIT','DEBIT','CARD','BANK','(PTY)','LTD','PAYMENT','PURCHASE'];
   
         //keywords for ALL accounts used to guess account and update existing keywords if requested
-        $sql = 'SELECT account_id,keywords FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND '.
-                    '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
-               'ORDER BY type_id, name ';
+        $sql = 'SELECT `account_id`,`keywords` FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+                    '(`type_id` LIKE "INCOME%" OR `type_id` LIKE "EXPENSE%" OR `type_id` LIKE "LIABILITY%") '.
+               'ORDER BY `type_id`, `name` ';
         $this->acc_keywords = $this->db->readSqlList($sql); 
 
-        $sql = 'SELECT account_id,type_id FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND '.
-                     '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
-               'ORDER BY type_id,name ';
+        $sql = 'SELECT `account_id`,`type_id` FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+                     '(`type_id` LIKE "INCOME%" OR `type_id` LIKE "EXPENSE%" OR `type_id` LIKE "LIABILITY%") '.
+               'ORDER BY `type_id`,`name` ';
         $this->acc_types = $this->db->readSqlList($sql); 
 
-        $sql = 'SELECT account_id,abbreviation FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND '.
-                     '(type_id LIKE "INCOME%" OR type_id LIKE "EXPENSE%" OR type_id LIKE "LIABILITY%") '.
+        $sql = 'SELECT `account_id`,`abbreviation` FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND '.
+                     '(`type_id` LIKE "INCOME%" OR `type_id` LIKE "EXPENSE%" OR `type_id` LIKE "LIABILITY%") '.
                'ORDER BY type_id,name ';
         $this->acc_codes = $this->db->readSqlList($sql); 
     } 

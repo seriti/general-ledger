@@ -195,9 +195,9 @@ class TransactCash
                   Form::radiobutton($group_name,'OUT',$direction,$param).'DECREASING '.
                   'Account</label></div>';
 
-        $sql = 'SELECT account_id,CONCAT(SUBSTR(type_id,1,1),": ",name) FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.$company_id.'" AND type_id = "ASSET_CURRENT_BANK" '.
-               'ORDER BY name';
+        $sql = 'SELECT `account_id`,CONCAT(SUBSTR(`type_id`,1,1),": ",`name`) FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "ASSET_CURRENT_BANK" '.
+               'ORDER BY `name`';
         $param = [];
         $param['class'] = 'form-control';
         $html .= '<div class="col-sm-8">'.
@@ -233,9 +233,9 @@ class TransactCash
                     <div class="col-sm-4">
                         <label>Counterparty account</label>
                     </div>';
-        $sql = 'SELECT account_id,CONCAT(SUBSTR(type_id,1,1),": ",name) FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.$company_id.'" AND (type_id LIKE "EXPENSE%" OR type_id LIKE "INCOME%") AND status <> "HIDE" '.
-               'ORDER BY type_id,name';
+        $sql = 'SELECT `account_id`,CONCAT(SUBSTR(`type_id`,1,1),": ",`name`) FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.$company_id.'" AND (`type_id` LIKE "EXPENSE%" OR `type_id` LIKE "INCOME%") AND `status` <> "HIDE" '.
+               'ORDER BY `type_id`,`name`';
         $param = [];
         $param['class'] = 'form-control';
         $html .= '<div class="col-sm-8">'.

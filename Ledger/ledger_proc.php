@@ -1,5 +1,6 @@
 <?php
 //just some easy namespace neatness.
+//*** LEGACY CODE FOR REFERENCE ONLY ***
 class ledger {
   
   public static function open_period($conn,$company_id,$period_id,&$error_str) {

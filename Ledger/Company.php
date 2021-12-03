@@ -24,8 +24,10 @@ class Company extends Table
         $this->addTableCol(array('id'=>'date_start','type'=>'DATE','title'=>'Date started','new'=>date('Y-m-d')));
         $this->addTableCol(array('id'=>'vat_apply','type'=>'BOOLEAN','title'=>'VAT applicable'));
         $this->addTableCol(array('id'=>'vat_rate','type'=>'STRING','title'=>'VAT rate(%)','new'=>'15'));
-        $this->addTableCol(array('id'=>'vat_account_id','type'=>'INTEGER','title'=>'VAT liability account','new'=>0,'join'=>'name FROM '.TABLE_PREFIX.'account WHERE account_id'));
-        $this->addTableCol(array('id'=>'ret_account_id','type'=>'INTEGER','title'=>'Retained earnings account','new'=>0,'join'=>'name FROM '.TABLE_PREFIX.'account WHERE account_id'));
+        $this->addTableCol(array('id'=>'vat_account_id','type'=>'INTEGER','title'=>'VAT liability account','new'=>0,
+                                 'join'=>'`name` FROM `'.TABLE_PREFIX.'account` WHERE `account_id`'));
+        $this->addTableCol(array('id'=>'ret_account_id','type'=>'INTEGER','title'=>'Retained earnings account','new'=>0,
+                                 'join'=>'`name` FROM `'.TABLE_PREFIX.'account` WHERE `account_id`'));
         $this->addTableCol(array('id'=>'status','type'=>'STRING','title'=>'Status'));
 
         $this->addAction(array('type'=>'edit','text'=>'edit'));
@@ -42,10 +44,10 @@ class Company extends Table
          
         if($company_id != 0) {
             $company_id = $this->db->escapeSql($company_id);
-            $this->addSelect('vat_account_id','SELECT account_id,name FROM '.TABLE_PREFIX.'account '.
-                                              'WHERE company_id = "'.$company_id.'" AND type_id = "LIABILITY_CURRENT" ORDER BY name');
-            $this->addSelect('ret_account_id','SELECT account_id,name FROM '.TABLE_PREFIX.'account '.
-                                              'WHERE company_id = "'.$company_id.'" AND type_id = "EQUITY_EARNINGS" ORDER BY name');
+            $this->addSelect('vat_account_id','SELECT `account_id`,`name` FROM `'.TABLE_PREFIX.'account` '.
+                                              'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "LIABILITY_CURRENT" ORDER BY `name`');
+            $this->addSelect('ret_account_id','SELECT `account_id`,`name` FROM `'.TABLE_PREFIX.'account` '.
+                                              'WHERE `company_id` = "'.$company_id.'" AND `type_id` = "EQUITY_EARNINGS" ORDER BY `name`');
         }   
          
          

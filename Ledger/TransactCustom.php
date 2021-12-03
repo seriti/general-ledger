@@ -89,9 +89,9 @@ class TransactCustom
             if(!is_numeric($this->credit_count)) $this->addError('Invalid account credit counter!'); 
             
             //get account list for validation and messages
-            $sql = 'SELECT account_id,name FROM '.TABLE_PREFIX.'account '.
-                   'WHERE company_id = "'.$company_id.'" AND status <> "HIDE" '.
-                   'ORDER BY name';
+            $sql = 'SELECT `account_id`,`name` FROM `'.TABLE_PREFIX.'account` '.
+                   'WHERE `company_id` = "'.$company_id.'" AND `status` <> "HIDE" '.
+                   'ORDER BY `name`';
             $accounts = $this->db->readSqlList($sql);  
                         
             if(!$this->errors_found) {
@@ -243,9 +243,9 @@ class TransactCustom
                         <tr><th width="70%">Account</th><th width="30%">Amount</th><th></th></tr>';
 
                         if($this->mode === 'update') {
-                            $sql = 'SELECT account_id,CONCAT(SUBSTR(type_id,1,1),": ",name) FROM '.TABLE_PREFIX.'account '.
-                                   'WHERE company_id = "'.$company_id.'" AND status <> "HIDE" '.
-                                   'ORDER BY type_id,name';
+                            $sql = 'SELECT `account_id`,CONCAT(SUBSTR(`type_id`,1,1),": ",`name`) FROM `'.TABLE_PREFIX.'account` '.
+                                   'WHERE `company_id` = "'.$company_id.'" AND `status` <> "HIDE" '.
+                                   'ORDER BY `type_id`,`name`';
                             $param = [];
                             $param['class'] = 'form-control';
                             
@@ -273,9 +273,9 @@ class TransactCustom
                         <tr><th width="70%">Account</th><th width="30%">Amount</th><th></th></tr>';
             
                         if($this->mode === 'update') {
-                            $sql = 'SELECT account_id,CONCAT(SUBSTR(type_id,1,1),": ",name) FROM '.TABLE_PREFIX.'account '.
-                                   'WHERE company_id = "'.$company_id.'" AND status <> "HIDE" '.
-                                   'ORDER BY type_id,name';
+                            $sql = 'SELECT `account_id`,CONCAT(SUBSTR(`type_id`,1,1),": ",`name`) FROM `'.TABLE_PREFIX.'account` '.
+                                   'WHERE `company_id` = "'.$company_id.'" AND `status` <> "HIDE" '.
+                                   'ORDER BY `type_id`,`name`';
                             $param = [];
                             $param['class'] = 'form-control';
                             
@@ -322,9 +322,9 @@ class TransactCustom
     {
         $js = '<script language="javascript">';
 
-        $sql = 'SELECT account_id,CONCAT(SUBSTR(type_id,1,1),": ",name) FROM '.TABLE_PREFIX.'account '.
-               'WHERE company_id = "'.COMPANY_ID.'" AND status <> "HIDE" '.
-               'ORDER BY type_id,name';
+        $sql = 'SELECT `account_id`,CONCAT(SUBSTR(`type_id`,1,1),": ",`name`) FROM `'.TABLE_PREFIX.'account` '.
+               'WHERE `company_id` = "'.COMPANY_ID.'" AND `status` <> "HIDE" '.
+               'ORDER BY `type_id`,`name`';
         $param = [];
         $param['class'] = 'form-control';
         $account_id = 0;
