@@ -269,11 +269,3 @@ class TransactCash
         return $html;
     }
 }
-?>
-
-
-
-     
-
-
-

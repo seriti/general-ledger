@@ -68,5 +68,3 @@ class Report extends ReportTool
         return $html;
     }
 }
-
-?>

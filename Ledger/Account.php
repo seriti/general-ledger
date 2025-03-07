@@ -95,7 +95,7 @@ class Account extends Table
             $this->db->executeSql($sql,$error);
         } 
     }
-
+    
     protected function modifyRowValue($col_id,$data,&$value) {
         if($col_id === 'type_id') {
             if(isset(ACC_TYPE[$value])) {
@@ -104,7 +104,5 @@ class Account extends Table
         }  
         
     } 
+    
 }            
-
-?>
-                                                

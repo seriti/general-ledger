@@ -197,6 +197,8 @@ class BankImport extends Import {
         if($import_type === 'BANK_SBSA' or $import_type === 'BANK_SBSA_CC') {
             $i=0;
             $v=0;
+
+            $ignore_desc = 'APO PAYMENT'; //also need to ignore "FUND TRANSFERS"
             while(($line = fgetcsv($handle_read,0,",")) !== FALSE) {
                 $i++;
                 $valid = false;

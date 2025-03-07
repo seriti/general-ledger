@@ -206,7 +206,3 @@ class ImportBankWizard extends Wizard
     }
 
 }
-
-?>
-
-

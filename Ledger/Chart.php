@@ -67,5 +67,3 @@ class Chart extends Tree
 
     }
 }
-
-?>

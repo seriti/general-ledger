@@ -102,6 +102,3 @@ class Period extends Table
         
     } 
 }            
-
-?>
-                                                

@@ -133,7 +133,3 @@ class SetupData extends SetupModuledata
         $this->addUpdateSql('2020-06-19 12:00','ALTER TABLE`TABLE_PREFIXaccount` ADD COLUMN `chart_id` INT NOT NULL AFTER `account_id`');
     }
 }
-
-
-  
-?>

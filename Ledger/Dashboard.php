@@ -31,5 +31,3 @@ class Dashboard extends DashboardTool
     }
 
 }
-
-?>

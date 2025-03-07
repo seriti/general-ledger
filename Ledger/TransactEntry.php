@@ -26,5 +26,3 @@ class TransactEntry extends Table
         $this->addTableCol(array('id'=>'date','type'=>'DATE','title'=>'Date'));
     }
 }
-
-?>

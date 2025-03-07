@@ -838,17 +838,17 @@ class Helpers {
             $doc_name = $company['name'].'_balance_sheet_'.$period['name'].'.csv';
             $doc_name = str_replace(' ','_',$doc_name);
             
-            if(count($assets != 0)) {
+            if(count($assets) != 0) {
                 $csv_data .=  Csv::arrayDumpCsv($assets);
                 $csv_data .= "\r\n";
             }
             
-            if(count($liability!=0)) {
+            if(count($liability) != 0) {
                 $csv_data .=  Csv::arrayDumpCsv($liability);
                 $csv_data .= "\r\n";
             }
             
-            if(count($equity!=0)) {
+            if(count($equity) != 0) {
                 $csv_data.= Csv::arrayDumpCsv($equity);
                 $csv_data.= "\r\n";
             }
@@ -856,7 +856,7 @@ class Helpers {
             
             Doc::outputDoc($csv_data,$doc_name,'DOWNLOAD','csv');
             exit;
-        } 
+        }    
         
         if($options['format'] === 'PDF') {
             $pdf_dir = BASE_UPLOAD.UPLOAD_DOCS;
@@ -889,21 +889,21 @@ class Helpers {
             
             
             //ASSETS
-            if(count($assets!=0)) {
+            if(count($assets) !=0 ) {
                 $pdf->changeFont('TEXT');
                 $pdf->arrayDrawTable($assets,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
             }
             
             //LIABILITIES
-            if(count($liability!=0)) {
+            if(count($liability) !=0 ) {
                 $pdf->changeFont('TEXT');
                 $pdf->arrayDrawTable($liability,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
             }
             
             //EQUITY
-            if(count($equity!=0)) {
+            if(count($equity) !=0 ) {
                 $pdf->changeFont('TEXT');
                 $pdf->arrayDrawTable($equity,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
@@ -1172,12 +1172,12 @@ class Helpers {
             $doc_name = $company['name'].'_income_statement_'.$period['name'].'.csv';
             $doc_name = str_replace(' ','_',$doc_name);
             
-            if(count($income != 0)) {
+            if(count($income) != 0) {
                 $csv_data .= Csv::arrayDumpCsv($income);
                 $csv_data .= "\r\n";
             }
             
-            if(count($expense != 0)) {
+            if(count($expense) != 0) {
                 $csv_data .= Csv::arrayDumpCsv($expense);
                 $csv_data .= "\r\n";
             }
@@ -1217,14 +1217,14 @@ class Helpers {
             
             
             //INCOME
-            if(count($income != 0)) {
+            if(count($income) != 0) {
                 $pdf->changeFont('TEXT');
                 $pdf->arrayDrawTable($income,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);
             }
             
             //EXPENSES
-            if(count($expense != 0)) {
+            if(count($expense) != 0) {
                 $pdf->changeFont('TEXT');
                 $pdf->arrayDrawTable($expense,$row_h,$col_width,$col_type,'L');
                 $pdf->Ln($row_h);

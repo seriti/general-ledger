@@ -39,7 +39,7 @@ class Company extends Table
         $this->addSelect('status','(SELECT "OK") UNION (SELECT "INACTIVE")');
     }
 
-    protected function beforeProcess($company_id)
+    protected function beforeProcess($company_id = 0)
     {
          
         if($company_id != 0) {
@@ -55,6 +55,3 @@ class Company extends Table
     }
 
 }            
-
-?>
-                                                
